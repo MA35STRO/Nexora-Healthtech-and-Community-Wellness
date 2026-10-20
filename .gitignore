@@ -10,3 +10,5 @@ server.log
 frontend/public/mediapipe/
 frontend/test-results/
 frontend/playwright-report/
+tools/
+*.log

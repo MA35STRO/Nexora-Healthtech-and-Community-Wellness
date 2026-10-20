@@ -116,6 +116,21 @@ npm run dev          # hot-reload UI on http://localhost:5173 (proxies to :8000)
 ```
 </details>
 
+### Open it on a phone or tablet
+
+Phones only allow camera access over HTTPS, so share the app through a free, temporary Cloudflare link. No account is needed (Windows):
+
+```powershell
+.\tunnel.ps1
+```
+
+It starts the app if it isn't already running, then prints a link like `https://xxxx.trycloudflare.com` and copies it to your clipboard. Open that link on the phone in Chrome (Android) or Safari (iPhone) and allow the camera. Add `/caregiver` to the link for the caregiver view. A nice demo: the phone is the patient, the laptop is the caregiver.
+
+- The link works only while the laptop is on and the script is running. Press **Ctrl+C** to stop sharing.
+- **The link changes every time you run the script.**
+- **There is no login.** Share the link only with people you trust.
+- Voice input works in Chrome on Android. On iPhone, use the buttons or typing (Kawan still speaks).
+
 ## 3-minute demo script
 
 1. Open **Companion** (camera goes LIVE and your skeleton appears) and **Caregiver** side by side. Turn **voice on**.
