@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
+dist/
+*.db
+.env
+server.log
+*.mjpg
+frontend/public/mediapipe/
+frontend/test-results/
+frontend/playwright-report/
