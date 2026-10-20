@@ -38,8 +38,9 @@ SCENARIOS: dict[str, dict] = {
                 "steps": [STAND, *FALL, Segment(2, (84, 84), (0.88, 0.88), "lying", say="I'm okay, just slipped"),
                           Segment(1.5, (60, 10), (0.88, 0.5), "sitting"), STAND]},
     "fall_help": {"label": "Fall, user asks for help (BM)",
-                  "steps": [STAND, *FALL, Segment(4, (84, 84), (0.88, 0.88), "lying",
-                                                  say="Tolong, saya tak boleh bangun")]},
+                  # reply ~1 s after the check-in is sent (well inside any timeout, incl. the 3 s test one)
+                  "steps": [STAND, FALL[0], Segment(3.5, (84, 84), (0.88, 0.88), "lying"),
+                            Segment(4, (84, 84), (0.88, 0.88), "lying", say="Tolong, saya tak boleh bangun")]},
     "inactivity": {"label": "Sits very still for too long (no reply)",
                    "steps": [STAND, *SIT, Segment(40, (12, 12), (0.68, 0.68), "sitting", motion=0.0)],
                    "setup": {"inactivity_s": 8}},
