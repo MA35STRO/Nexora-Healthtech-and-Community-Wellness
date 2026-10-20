@@ -38,6 +38,7 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
   const [heard, setHeard] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const rec = useRef<Recognition | null>(null)
   const want = useRef({ continuous: false, oneShot: false, armedUntil: 0 })
   const opts = useRef({ awaitingAnswer, onCommand })
@@ -58,16 +59,35 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
     const r: Recognition = new RecognitionCtor()
     r.lang = BCP47[lang]
     r.continuous = true
-    r.interimResults = false
-    r.onstart = () => setListening(true)
+    r.interimResults = true   // show words as they are heard; we only ACT on final results
+    r.onstart = () => {
+      setListening(true)
+      setError(null)
+    }
     r.onend = () => {
       setListening(false)
       if (want.current.continuous && !speakingRef.current) setTimeout(startRec, 300)
     }
-    r.onerror = () => setListening(false)
+    r.onerror = (e: { error: string }) => {
+      setListening(false)
+      if (e.error === 'no-speech' || e.error === 'aborted') return   // normal: silence / we stopped it
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        want.current.continuous = false   // don't retry in a loop
+        setError('Microphone blocked — click the 🔒/camera icon in the address bar and allow the microphone.')
+      } else if (e.error === 'network') {
+        setError('Speech recognition needs an internet connection (the browser sends audio to its speech service).')
+      } else if (e.error === 'audio-capture') {
+        setError('No microphone found.')
+      } else {
+        setError(`Speech recognition error: ${e.error}`)
+      }
+    }
     r.onresult = (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>; resultIndex: number }) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (!e.results[i].isFinal) continue
+        if (!e.results[i].isFinal) {
+          setHeard(e.results[i][0].transcript.trim() + '…')
+          continue
+        }
         const said = e.results[i][0].transcript.trim()
         if (!said) continue
         setHeard(said)
@@ -138,5 +158,5 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
     startRec()
   }, [startRec])
 
-  return { speak, speaking, listening, heard, pushToTalk }
+  return { speak, speaking, listening, heard, error, pushToTalk }
 }

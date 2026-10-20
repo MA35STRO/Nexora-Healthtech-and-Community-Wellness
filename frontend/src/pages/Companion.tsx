@@ -130,6 +130,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
           {canSpeak && (
             <button className={`btn small ${voiceOn ? 'primary' : ''}`} onClick={() => {
               setVoiceOn(!voiceOn)
+              if (!voiceOn && canListen) setHandsFree(true)   // voice on = Kawan talks AND listens for "Hey Kawan"
               if (!voiceOn && lastAssistant) setTimeout(() => voice.speak(lastAssistant.text), 50)
             }}>
               <IconSpeaker size={16} /> {voiceOn ? t('voiceOn', lang) : t('voiceOff', lang)}
@@ -160,7 +161,22 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
                     </div>
                   </>
                 )}
-                {voice.heard && voiceOn && <div className="tiny muted" style={{ marginTop: 6 }}>🎙 “{voice.heard}”</div>}
+                {voiceOn && (
+                  <div className="small" style={{ marginTop: 8 }} data-testid="mic-status">
+                    {voice.error ? (
+                      <span style={{ color: 'var(--danger)', fontWeight: 700 }}>🎙 {voice.error}</span>
+                    ) : !canListen ? (
+                      <span className="muted">🎙 This browser can't listen — use Chrome or Edge, or the buttons below.</span>
+                    ) : voice.listening ? (
+                      <span className="muted">
+                        🎙 {lang === 'ms' ? 'Sebut' : 'Say'} <b>“Hey Kawan, …”</b>
+                        {voice.heard && <> · {lang === 'ms' ? 'dengar' : 'heard'}: “{voice.heard}”</>}
+                      </span>
+                    ) : voice.speaking ? null : (
+                      <span className="muted">🎙 {handsFree ? (lang === 'ms' ? 'Memulakan mikrofon…' : 'Starting microphone…') : (lang === 'ms' ? 'Tekan Cakap untuk bercakap' : 'Tap Talk to speak')}</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </section>
