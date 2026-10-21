@@ -495,3 +495,13 @@ def test_connect_ai_tests_key_saves_it_privately_and_survives_reset(monkeypatch)
     assert hub.brain.online  # resetting data keeps the AI connection
     hub.disconnect_ai()
     assert not hub.brain.online and hub.ai_key_source() is None
+
+
+def test_reminder_text_reads_as_sentences():
+    from app.hub import _sentence
+
+    assert (
+        _sentence("Take with food") == "Take with food."
+        and _sentence("Same time daily.") == "Same time daily."
+    )
+    assert _sentence("") == ""

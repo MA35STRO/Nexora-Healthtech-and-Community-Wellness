@@ -312,7 +312,7 @@ class Hub:
                     self._say(
                         "assistant",
                         conversation.MED_REMINDER[self.engine.lang].format(
-                            name=med.name, dose=med.dose, instructions=med.instructions
+                            name=med.name, dose=med.dose, instructions=_sentence(med.instructions)
                         ),
                         kind="reminder",
                     )
@@ -644,3 +644,9 @@ class Hub:
         )
         self.chat = self.chat[-100:]
         self.version += 1
+
+
+def _sentence(text: str) -> str:
+    """'Take with food' → 'Take with food.' so it reads well before the next sentence."""
+    text = text.strip()
+    return text if not text or text[-1] in ".!?" else text + "."
