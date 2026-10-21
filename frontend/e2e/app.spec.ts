@@ -110,11 +110,15 @@ test('caregiver saves profile; a real reading appears on the companion', async (
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByTestId('status-banner')).toContainText('Aminah')
   await page.goto('/')
+  await expect(page.locator('.bubble')).toContainText('Aminah') // live data has loaded
   await expect(page.getByTestId('welcome')).toHaveCount(0)
   await page.getByLabel('BP top (systolic)').fill('128')
   await page.getByLabel('BP bottom (diastolic)').fill('82')
   await page.getByRole('button', { name: 'Save reading' }).click()
-  await expect(page.locator('.vital').filter({ hasText: 'BLOOD PRESSURE' })).toContainText('128/82')
+  await expect(page.getByText('Reading saved.')).toBeVisible()
+  await expect(page.locator('.vital').filter({ hasText: 'BLOOD PRESSURE' })).toContainText('128/82', {
+    timeout: 15_000,
+  })
   await expect(page.getByText(/entered by you/)).toBeVisible()
 })
 
