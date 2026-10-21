@@ -169,7 +169,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 
 | Suite | Command | What it proves |
 |---|---|---|
-| Backend (106) | `cd backend && .venv/Scripts/python -m pytest -q` | Fall rules, safety engine R1–R10, replies in EN/BM, medicines, inactivity, vitals, triage, AI grounding and citations, no invented data, full API + WebSocket flows |
+| Backend (107) | `cd backend && .venv/Scripts/python -m pytest -q` | Fall rules, safety engine R1–R10, replies in EN/BM, medicines, inactivity, vitals, triage, AI grounding and citations, no invented data, full API + WebSocket flows |
 | Frontend unit (19) | `cd frontend && npm test` | Pose maths, motion score, "Hey Kawan" matching |
 | Browser end-to-end (12) | `cd frontend && npx playwright test` | A real Chromium with a fake webcam: camera auto-start, fall → check-in → alert → resolve, medicines, cited answers, triage, settings, readings, guide, report |
 

@@ -172,7 +172,7 @@ Interactive docs are at **http://localhost:8000/docs**.
 ## Testing
 
 ```bash
-cd backend  && .venv/Scripts/python -m pytest -q     # 106 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
+cd backend  && .venv/Scripts/python -m pytest -q     # 107 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
 cd frontend && npm test                               # 19 unit tests: landmark packing, motion score, fuzzy "Hey Kawan" matching
 cd frontend && npx playwright test                    # 12 browser e2e tests with a fake webcam (camera auto-start, fall → escalate → resolve, meds, cited answers, triage, settings, readings, guide, report)
 ```
