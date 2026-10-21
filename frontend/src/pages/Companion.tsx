@@ -43,6 +43,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   const [text, setText] = useState('')
   const [wellnessOpen, setWellnessOpen] = useState(false)
   const [pillMsg, setPillMsg] = useState<string | null>(null)
+  const [entryOpen, setEntryOpen] = useState(true) // "Add a reading" panel; stays open until the user closes it
   const [busy, setBusy] = useState(false)
   const [now, setNow] = useState(Date.now() / 1000)
   const cam = useCamera(privacy)
@@ -523,7 +524,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
                   : 'No readings yet. Enter a reading from your blood pressure monitor, oximeter or thermometer.'}
               </p>
             )}
-            <details style={{ marginTop: 10 }} open={!v}>
+            <details
+              style={{ marginTop: 10 }}
+              open={entryOpen}
+              onToggle={(e) => setEntryOpen((e.target as HTMLDetailsElement).open)}
+            >
               <summary className="small" style={{ cursor: 'pointer', fontWeight: 800 }}>
                 {lang === 'ms' ? '+ Tambah bacaan' : '+ Add a reading'}
               </summary>
