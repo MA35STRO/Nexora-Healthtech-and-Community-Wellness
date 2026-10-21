@@ -40,12 +40,12 @@ class Hub:
         self,
         cfg: Settings = default_settings,
         store: Optional[Database] = None,
-        brain: Optional[AIAnswers] = None,
+        ai: Optional[AIAnswers] = None,
         notifier: Optional[Notifier] = None,
     ):
         self.cfg = cfg
         self.store = store or Database(cfg.db_path)
-        self.brain = brain or self._brain_from_saved_key()
+        self.ai = ai or self._ai_from_saved_key()
         self.notifier = notifier or Notifier(cfg)
         self.lock = threading.RLock()
         self._demo_stop = threading.Event()
@@ -165,7 +165,7 @@ class Hub:
             context, history = self._context_text(now), [m for m in self.chat[:-1] if m["from"] != "system"]
             profile = self.profile()
 
-        res = self.brain.answer(text, lang, context, history, profile)  # slow: outside the lock
+        res = self.ai.answer(text, lang, context, history, profile)  # slow: outside the lock
         with self.lock:
             return self._answer(res["reply"], "ask", source=res["source"], refs=res["refs"])
 
@@ -264,7 +264,7 @@ class Hub:
     def pill_check(self, image_b64: str) -> dict:
         with self.lock:
             names, lang = [m.name for m in self.meds.meds.values()], self.engine.lang
-        res = self.brain.read_medicine(image_b64, names, lang)
+        res = self.ai.read_medicine(image_b64, names, lang)
         with self.lock:
             self._record(
                 [
@@ -423,7 +423,7 @@ class Hub:
             self.version += 1
 
     # ---------- optional Claude connection (key entered in Settings, stored only on this computer) ----------
-    def _brain_from_saved_key(self) -> AIAnswers:
+    def _ai_from_saved_key(self) -> AIAnswers:
         key = self.cfg.anthropic_api_key or self.store.kv_get("anthropic_api_key") or ""
         return AIAnswers(dataclasses.replace(self.cfg, anthropic_api_key=key))
 
@@ -445,14 +445,14 @@ class Hub:
         if ok:
             with self.lock:
                 self.store.kv_set("anthropic_api_key", key)
-                self.brain = candidate
+                self.ai = candidate
                 self.version += 1
         return {"ok": ok, "message": message}
 
     def disconnect_ai(self) -> dict:
         with self.lock:
             self.store.kv_set("anthropic_api_key", None)
-            self.brain = self._brain_from_saved_key()
+            self.ai = self._ai_from_saved_key()
             self.version += 1
         return {"ok": True}
 
@@ -507,8 +507,8 @@ class Hub:
                     "mode": self.sim.mode,
                 },
                 "ai": {
-                    "online": self.brain.online,
-                    "model": self.cfg.anthropic_model if self.brain.online else None,
+                    "online": self.ai.online,
+                    "model": self.cfg.anthropic_model if self.ai.online else None,
                     "key_source": self.ai_key_source(),
                     "topics": len(health_library.topics()),
                 },

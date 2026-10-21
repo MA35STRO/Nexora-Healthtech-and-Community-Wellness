@@ -74,7 +74,7 @@ flowchart LR
   subgraph Hub["Kawan hub (FastAPI)"]
     WS1 --> OBS[Observation<br/>torso angle, hip height, motion]
     OBS --> FD[FallDetector]
-    OBS --> RM[RoutineMonitor<br/>learned inactivity]
+    OBS --> RM[InactivityMonitor<br/>learned inactivity]
     VS[Vitals sim / devices] --> VM[VitalsMonitor]
     MS[MedScheduler] --> CE
     FD --> CE[SafetyEngine<br/>check-in → escalate]

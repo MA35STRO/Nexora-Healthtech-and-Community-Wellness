@@ -94,7 +94,7 @@ class PillIn(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "ai_online": hub.brain.online}
+    return {"ok": True, "ai_online": hub.ai.online}
 
 
 class ProfileIn(BaseModel):

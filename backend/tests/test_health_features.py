@@ -268,7 +268,7 @@ def test_knowledge_finds_topics_en_bm():
     assert health_library.answer("quantum chromodynamics") is None
 
 
-def test_brain_offline_uses_knowledge_base():
+def test_ai_offline_uses_health_library():
     b = AIAnswers(Settings(anthropic_api_key=""))
     assert not b.online
     r = b.answer("what is hypoglycaemia", "en", "", [])
@@ -295,7 +295,7 @@ class FakeClient:
         return SimpleNamespace(content=[SimpleNamespace(type="text", text=self.text)])
 
 
-def test_brain_uses_claude_with_grounding_and_falls_back_on_error():
+def test_ai_uses_claude_with_grounding_and_falls_back_on_error():
     fake = FakeClient(text="Metformin helps lower blood sugar.\nUSED: metformin")
     b = AIAnswers(Settings(), client=fake)
     r = b.answer(
@@ -352,7 +352,7 @@ def test_alternate_merges_and_starts_with_user():
 
 def test_chat_question_never_reaches_llm_during_checkin():
     fake = FakeClient()
-    hub = Hub(CFG, Database(":memory:"), brain=AIAnswers(CFG, client=fake))
+    hub = Hub(CFG, Database(":memory:"), ai=AIAnswers(CFG, client=fake))
     hub._detect(Detection("possible_fall", 1, ["r"], "u", "camera"), 1)
     r = hub.user_message("what is metformin?")
     assert r["route"] == "checkin_reply" and fake.calls == []
@@ -479,7 +479,7 @@ def test_connect_ai_tests_key_saves_it_privately_and_survives_reset(monkeypatch)
     from app.ai_answers import AIAnswers
 
     hub = Hub(CFG, Database(":memory:"))
-    assert not hub.brain.online and hub.ai_key_source() is None
+    assert not hub.ai.online and hub.ai_key_source() is None
     assert hub.connect_ai("hello")["ok"] is False  # wrong format, never sent anywhere
 
     monkeypatch.setattr(AIAnswers, "check", lambda self: (False, "The key was not accepted."))
@@ -492,9 +492,9 @@ def test_connect_ai_tests_key_saves_it_privately_and_survives_reset(monkeypatch)
     assert snap["ai"]["online"] and snap["ai"]["key_source"] == "app"
     assert "sk-ant-" not in str(snap)  # the key never leaves the server
     hub.reset()
-    assert hub.brain.online  # resetting data keeps the AI connection
+    assert hub.ai.online  # resetting data keeps the AI connection
     hub.disconnect_ai()
-    assert not hub.brain.online and hub.ai_key_source() is None
+    assert not hub.ai.online and hub.ai_key_source() is None
 
 
 def test_reminder_text_reads_as_sentences():
