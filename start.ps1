@@ -10,6 +10,6 @@ Push-Location frontend
 if (-not (Test-Path node_modules)) { npm install }
 npm run build
 Pop-Location
-Write-Host "`nBAYMAX is starting: open http://localhost:8000  (caregiver view: /caregiver)`n" -ForegroundColor Green
+Write-Host "`nKawan is starting: open http://localhost:8000  (caregiver view: /caregiver)`n" -ForegroundColor Green
 Set-Location backend
 .\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000

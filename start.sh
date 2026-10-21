@@ -7,5 +7,5 @@ if [ ! -d backend/.venv ]; then
   backend/.venv/bin/pip install -r backend/requirements.txt
 fi
 (cd frontend && { [ -d node_modules ] || npm install; } && npm run build)
-echo -e "\nBAYMAX is starting: open http://localhost:8000  (caregiver view: /caregiver)\n"
+echo -e "\nKawan is starting: open http://localhost:8000  (caregiver view: /caregiver)\n"
 cd backend && .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000

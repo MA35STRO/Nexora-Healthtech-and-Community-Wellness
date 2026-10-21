@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 PATH = Path(__file__).parent / "data" / "knowledge.json"
+STOP = {"a", "an", "and", "the", "with", "at", "of", "for", "to", "do", "what", "when", "how", "is", "in", "on",
+        "or", "other", "you", "your", "my", "i", "e", "g", "if", "about", "me", "it"}
 
 
 @lru_cache
@@ -30,14 +32,14 @@ def search(text: str, k: int = 1) -> list[tuple[float, dict]]:
             norm = " ".join(re.findall(r"[a-z0-9']+", kw.lower()))
             if f" {norm} " in t:
                 score += 1 + len(norm.split())   # multi-word phrase matches count more
-        score += 0.5 * len(words & (_words(topic["title"]) - {"and", "a", "the", "with", "at", "of"}))
+        score += 0.5 * len(words & (_words(topic["title"]) - STOP))
         if score:
             scored.append((score, topic))
     scored.sort(key=lambda x: -x[0])
     return scored[:k]
 
 
-def answer(text: str, lang: str = "en") -> Optional[dict]:
+def answer(text: str, lang: str = "en") -> Optional[dict]:   # simple single-topic lookup (used by tests)
     hits = search(text)
     if not hits or hits[0][0] < 1:
         return None

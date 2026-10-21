@@ -55,7 +55,7 @@ class Settings:
     med_snooze_s: float = _f("MED_SNOOZE_S", 600)
 
     # --- Vitals (simulated unless a device posts to /api/vitals) ---
-    vitals_sim: bool = _s("VITALS_SIM", "1") == "1"
+    vitals_sim: bool = _s("VITALS_SIM", "0") == "1"   # off: only real readings (demos switch it on briefly)
     vitals_interval_s: float = _f("VITALS_INTERVAL_S", 2)
     vitals_sustain_s: float = _f("VITALS_SUSTAIN_S", 20)       # abnormal must persist this long
     spo2_low: float = _f("SPO2_LOW", 92)
@@ -75,12 +75,12 @@ class Settings:
     telegram_chat_id: str = _s("TELEGRAM_CHAT_ID")
 
     # --- Profile ---
-    user_name: str = _s("USER_NAME", "Mak Cik Aminah")
-    caregiver_name: str = _s("CAREGIVER_NAME", "Farid (son)")
-    seed_history: bool = _s("SEED_DEMO_HISTORY", "1") == "1"
+    user_name: str = _s("USER_NAME")
+    caregiver_name: str = _s("CAREGIVER_NAME")
+    seed_history: bool = _s("SEED_DEMO_HISTORY", "0") == "1"   # off: no invented history
 
     # --- Infra ---
-    db_path: str = _s("BAYMAX_DB", str(ROOT / "baymax.db"))
+    db_path: str = _s("KAWAN_DB", str(ROOT / "kawan.db"))
     camera_mode: str = _s("CAMERA_MODE", "browser")   # browser (default) | server (OpenCV on this machine)
     camera_index: int = int(_f("CAMERA_INDEX", 0))
     model_path: str = _s("POSE_MODEL", str(ROOT / "models" / "pose_landmarker_lite.task"))

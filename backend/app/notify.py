@@ -9,7 +9,7 @@ import httpx
 
 from .config import Settings, settings as default_settings
 
-log = logging.getLogger("baymax.notify")
+log = logging.getLogger("kawan.notify")
 
 
 class Notifier:

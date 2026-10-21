@@ -4,4 +4,4 @@ import os
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["TELEGRAM_BOT_TOKEN"] = ""
 os.environ["TELEGRAM_CHAT_ID"] = ""
-os.environ["BAYMAX_DB"] = ":memory:"
+os.environ["KAWAN_DB"] = ":memory:"

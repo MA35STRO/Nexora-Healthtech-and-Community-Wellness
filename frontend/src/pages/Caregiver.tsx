@@ -49,10 +49,10 @@ function useEscalationAlerts(snap: Snapshot | null) {
       seen.current.add(i.id)
       beep()
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(`BAYMAX alert: ${KIND_LABEL[i.kind] ?? i.kind}`, { body: i.escalation_reason ?? i.reasons[0], tag: `inc-${i.id}` })
+        new Notification(`Kawan alert: ${KIND_LABEL[i.kind] ?? i.kind}`, { body: i.escalation_reason ?? i.reasons[0], tag: `inc-${i.id}` })
       }
     }
-    document.title = escalated.length ? `🚨 ALERT — BAYMAX` : 'BAYMAX — Caregiver'
+    document.title = escalated.length ? `🚨 ALERT — Kawan` : 'Kawan — Caregiver'
   }, [snap])
 }
 
@@ -60,6 +60,10 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
   const [insights, setInsights] = useState<Insights | null>(null)
   const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
   useEscalationAlerts(snap)
+  const loaded = snap !== null
+  useEffect(() => {   // "/caregiver#setup" → jump to the settings card
+    if (loaded && location.hash) document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' })
+  }, [loaded])
 
   const refresh = useCallback(() => api.insights().then(setInsights).catch(() => undefined), [])
   const incidentKey = snap?.incidents.map((i) => `${i.id}${i.status}${i.user_response}`).join() ?? ''
@@ -90,7 +94,7 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
       <main className="page grid caregiver">
         <section className={`banner span-12 ${snap.state}`} data-testid="status-banner">
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="sub small">{snap.profile.user_name} · caregiver: {snap.profile.caregiver_name}</div>
+            <div className="sub small">{snap.profile.user_name || 'Person at home (name not set)'} · caregiver: {snap.profile.caregiver_name || 'not set'}</div>
             <h1>{title}</h1>
             <div className="sub">{sub}</div>
           </div>
@@ -134,7 +138,9 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
               </span>
             )}
           </div>
-          <VitalsChart history={snap.vitals.history} />
+          {snap.vitals.history.length ? <VitalsChart history={snap.vitals.history} /> : (
+            <p className="muted">No readings yet. They appear here when readings are entered on the Companion page (“My readings”) or sent by a device to <code>/api/vitals</code>.</p>
+          )}
         </section>
 
         <section className="card span-4">
@@ -145,7 +151,9 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
               <span className={`chip ${insights.adherence.percent >= 80 ? 'ok' : 'warn'}`}>{insights.adherence.percent}% · 7 days</span>
             )}
           </div>
-          {insights && <AdherenceChart data={insights.adherence} />}
+          {insights && (insights.adherence.taken + insights.adherence.missed > 0
+            ? <AdherenceChart data={insights.adherence} />
+            : <p className="muted">No doses recorded yet. Add medicines below; taken and missed doses will be tracked here.</p>)}
           <div className="small">
             {snap.meds.today.map((d) => (
               <div key={d.id} className="row" style={{ justifyContent: 'space-between' }}>
@@ -159,12 +167,17 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
         <section className="card span-6">
           <div className="card-head"><h2>Activity pattern (active minutes / hour)</h2></div>
           {insights && <ActivityHeatmap data={insights.activity} />}
-          <p className="tiny muted">* includes simulated history. Kawan learns typical still periods per hour to spot unusual inactivity.</p>
+          <p className="tiny muted">
+            {insights?.activity.some((d) => d.simulated) ? '* simulated demo history. ' : ''}
+            Built from the camera while the Companion page is open. Kawan learns typical still periods per hour to spot unusual inactivity.
+          </p>
         </section>
 
         <section className="card span-6">
           <div className="card-head"><h2>Daily check-ins</h2></div>
-          {insights && <WellnessChart data={insights.wellness} />}
+          {insights && (insights.wellness.length
+            ? <WellnessChart data={insights.wellness} />
+            : <p className="muted">No daily check-ins yet. They are done from the Companion page (“Daily check-in”).</p>)}
         </section>
 
         <section className="card span-7">
@@ -190,6 +203,10 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
 
         <section className="card span-5">
           <MedsEditor snap={snap} />
+        </section>
+
+        <section className="card span-12" id="setup">
+          <ProfileEditor snap={snap} />
         </section>
 
         <section className="card span-12 no-print">
@@ -237,9 +254,12 @@ function MedsEditor({ snap }: { snap: Snapshot }) {
   const [dose, setDose] = useState('')
   const [time, setTime] = useState('08:00')
   const [instructions, setInstructions] = useState('')
+  const [purpose, setPurpose] = useState('')
   const add = async () => {
     if (!name.trim()) return
-    await api.addMed({ name, dose, times: [time], instructions, purpose: '', color: '#9b6ce8' })
+    const times = time.split(',').map((x) => x.trim()).filter(Boolean)
+    await api.addMed({ name, dose, times, instructions, purpose, color: COLORS[snap.meds.schedule.length % COLORS.length] })
+    setPurpose('')
     setName('')
     setDose('')
     setInstructions('')
@@ -257,13 +277,46 @@ function MedsEditor({ snap }: { snap: Snapshot }) {
       <div className="row" style={{ marginTop: 10 }}>
         <input aria-label="Medicine name" placeholder="Medicine" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
         <input aria-label="Dose" placeholder="Dose" value={dose} onChange={(e) => setDose(e.target.value)} style={{ ...inputStyle, width: 90 }} />
-        <input aria-label="Time" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ ...inputStyle, width: 110 }} />
-        <input aria-label="Instructions" placeholder="Instructions" value={instructions} onChange={(e) => setInstructions(e.target.value)} style={inputStyle} />
+        <input aria-label="Time" placeholder="08:00, 20:00" value={time} onChange={(e) => setTime(e.target.value)} style={{ ...inputStyle, flex: 'none', width: 120 }} title="One or more times, separated by commas (24-hour)" />
+        <input aria-label="Instructions" placeholder="Instructions (e.g. with food)" value={instructions} onChange={(e) => setInstructions(e.target.value)} style={inputStyle} />
+        <input aria-label="Purpose" placeholder="What it's for (from doctor)" value={purpose} onChange={(e) => setPurpose(e.target.value)} style={inputStyle} />
         <button className="btn primary small" onClick={add}>Add</button>
       </div>
     </>
   )
 }
+const COLORS = ['#5b8def', '#f2a541', '#47b39d', '#9b6ce8', '#e8655f', '#3aa0b8']
+
+function ProfileEditor({ snap }: { snap: Snapshot }) {
+  const [p, setP] = useState(snap.profile)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => setP(snap.profile), [snap.profile.user_name, snap.profile.caregiver_name])   // eslint-disable-line react-hooks/exhaustive-deps
+  const field = (k: keyof typeof p, label: string, placeholder: string, wide = false) => (
+    <label className="small" style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: wide ? '2 1 280px' : '1 1 180px' }}>
+      <b>{label}</b>
+      <input aria-label={label} placeholder={placeholder} value={p[k]} style={{ ...inputStyle, flex: 'none' }}
+        onChange={(e) => { setP({ ...p, [k]: e.target.value }); setSaved(false) }} />
+    </label>
+  )
+  return (
+    <>
+      <div className="card-head">
+        <h2>Profile & settings</h2>
+        <span className="small muted">Kawan only uses what you enter here; it never guesses personal details.</span>
+      </div>
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        {field('user_name', 'Name of person at home', 'e.g. Aminah')}
+        {field('caregiver_name', 'Caregiver name', 'e.g. Farid (son)')}
+        {field('caregiver_phone', 'Caregiver phone', 'shown in the report')}
+        {field('conditions', 'Health conditions', 'e.g. type 2 diabetes, hypertension', true)}
+        {field('allergies', 'Allergies', 'e.g. penicillin', true)}
+        <button className="btn primary" onClick={async () => { await api.saveProfile(p); setSaved(true) }}>Save</button>
+        {saved && <span className="chip ok">Saved</span>}
+      </div>
+    </>
+  )
+}
+
 const inputStyle = { flex: 1, minWidth: 100, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg)' }
 
 function DemoPanel({ snap }: { snap: Snapshot }) {

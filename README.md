@@ -1,4 +1,4 @@
-# BAYMAX — AI Guardian for Independent Living
+# Kawan — AI Guardian for Independent Living
 
 > **Not a doctor. Not a surveillance camera. A guardian.**
 > UTP CodeFest 2026 · HealthTech track · AI/ML · NLP · IoT software · Data analytics
@@ -14,6 +14,8 @@ It checks in with you before raising any alarm. If you need help, or don't answe
 
 ![Caregiver dashboard during an alert](docs/screenshots/caregiver-alert.png)
 
+*Screenshots taken in demo mode: the readings, history and profile shown are SIMULATED.*
+
 | Companion (patient) | Check-in after a possible fall | Mobile |
 |---|---|---|
 | ![](docs/screenshots/companion.png) | ![](docs/screenshots/companion-checkin.png) | ![](docs/screenshots/mobile.png) |
@@ -25,7 +27,7 @@ It checks in with you before raising any alarm. If you need help, or don't answe
 - Nearly **1 in 5 Malaysian adults has diabetes**, and hypertension and heart disease keep rising.
 - Older adults juggling several prescriptions are at the highest risk, and so are people recovering at home alone.
 - **Falls go unnoticed for hours.** Missed doses and early signs of deterioration are only found once there's a crisis.
-- Most health apps track *passively* and in silos. BAYMAX turns home signals into **active, explainable care**:
+- Most health apps track *passively* and in silos. Kawan turns home signals into **active, explainable care**:
 
 ```
 notice → check in with the person → escalate only when needed → give the caregiver reasons
@@ -40,9 +42,9 @@ notice → check in with the person → escalate only when needed → give the c
 | 💬 | **Check-in before alarm** | *"I noticed what may have been a fall. Are you okay?"* The person can answer by voice, a button or chat. Silence or "help" escalates. "I'm okay" lowers the severity. |
 | 💊 | **Medication reminders** | Spoken reminders, snooze, *"I took my medicine"*, caregiver notice for missed doses, adherence chart. |
 | 📷 | **Pill check** *(with API key)* | Hold the box up to the camera. Claude reads the label and matches it to your schedule. A photo is sent only when you tap the button. |
-| ❤️ | **Vitals monitor** | Simulated home device (HR, SpO2, BP, temperature). Real devices can post to `POST /api/vitals`. Alerts need **sustained** abnormal readings, so one bad reading isn't enough. |
+| ❤️ | **Vitals monitor** | Enter **real** readings from your own BP monitor, oximeter or thermometer, or have a device post to `POST /api/vitals`. Unusual readings trigger a check-in; oxygen and heart-rate alerts need **sustained** readings, so one bad reading isn't enough. |
 | 🩺 | **Daily wellness check-in** | Mood, pain, sleep and symptoms. Gives non-diagnostic triage (*self-care / keep an eye on it / see a doctor today / call 999*). Red-flag symptoms escalate instantly. |
-| 📚 | **Health literacy (EN/BM)** | Ask *"What is metformin for?"* or *"Apa itu darah tinggi?"* Answers come from Claude when a key is set, otherwise from a **curated offline knowledge base** of 34 topics with Malaysian context. |
+| 📚 | **Health literacy (EN/BM)** | Ask *"What is metformin for?"* or *"Apa itu darah tinggi?"* Answers come from a **curated, source-cited library of 71 topics** (Malaysian MOH clinical practice guidelines, WHO, NHS and others). **The source is shown under every answer.** With an API key, Claude answers grounded in that library, at low temperature, and must say "I'm not sure" rather than invent doses, numbers or personal details. |
 | 🎙️ | **Voice companion** | Speaks every prompt. Listens with *"Hey Kawan…"*. During a check-in it accepts "I'm okay" or "Tolong" with no wake word. |
 | 👨‍👩‍👧 | **Caregiver dashboard** | Live status, alert card with reasons and uncertainty, Acknowledge/Resolve, timeline, vitals, adherence, activity heatmap, wellness trends, browser notifications and sound. Optional **Telegram** phone alerts. |
 | 🧾 | **Doctor-visit report** | One click to a printable or PDF summary: adherence, vitals ranges, symptoms, alerts, and questions to ask the doctor. |
@@ -55,7 +57,8 @@ notice → check in with the person → escalate only when needed → give the c
 2. **The LLM only explains.** A reply to a check-in is *never* sent to the LLM. "Help" or red-flag symptoms are caught before any AI call. If Claude fails, the offline knowledge base answers.
 3. **Fail-safe language handling.** Only an explicit "okay" clears a check-in. *"Okay but my leg hurts"* counts as help. Unclear replies keep the timer running.
 4. **Honest uncertainty.** Every alert shows *why* it fired and *what else it could be*.
-5. **Simulated data is always labelled** SIMULATED in the UI, the API and the report.
+5. **No made-up data.** A fresh install has no invented patient, medicines, readings or history. Everything comes from what the user or caregiver enters, the camera, or a device. The AI is only given facts the app actually holds, and missing facts are marked as missing.
+6. **Demo data is clearly separated.** The demo buttons label everything SIMULATED, and demo doses never count towards real adherence.
 
 ## Architecture
 
@@ -66,7 +69,7 @@ flowchart LR
     MP -->|33 landmarks/frame<br/>no images| WS1((/ws/perception))
     UI[Companion UI<br/>voice + avatar]
   end
-  subgraph Hub["BAYMAX hub (FastAPI)"]
+  subgraph Hub["Kawan hub (FastAPI)"]
     WS1 --> OBS[Observation<br/>torso angle, hip height, motion]
     OBS --> FD[FallDetector]
     OBS --> RM[RoutineMonitor<br/>learned inactivity]
@@ -100,6 +103,8 @@ Requirements: **Python 3.12**, **Node 20+**, and **Chrome or Edge** (for camera 
 ```
 
 Then open **http://localhost:8000**. The browser asks for camera permission and monitoring starts on its own. Open **http://localhost:8000/caregiver** in another tab, or on another screen, to see the caregiver view.
+
+**First time?** Open **How to use** in the top menu (http://localhost:8000/guide). It's a step-by-step guide in English and Bahasa Melayu. Then fill in **Profile & settings** and the **Medication schedule** on the Caregiver page.
 
 Optional: copy `.env.example` to `backend/.env` and add `ANTHROPIC_API_KEY` (Claude answers and pill check) or Telegram bot details.
 
@@ -165,9 +170,9 @@ Interactive docs are at **http://localhost:8000/docs**.
 ## Testing
 
 ```bash
-cd backend  && .venv/Scripts/python -m pytest -q     # 97 tests: detector, engine, meds, routine, vitals, triage, routing, LLM fallback, API/WebSocket e2e
-cd frontend && npm test                               # 12 unit tests: landmark packing, motion score, wake phrase
-cd frontend && npx playwright test                    # 8 browser e2e tests with a fake webcam (camera auto-start, fall → escalate → resolve, meds, chat, triage, report)
+cd backend  && .venv/Scripts/python -m pytest -q     # 104 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
+cd frontend && npm test                               # 19 unit tests: landmark packing, motion score, fuzzy "Hey Kawan" matching
+cd frontend && npx playwright test                    # 12 browser e2e tests with a fake webcam (camera auto-start, fall → escalate → resolve, meds, cited answers, triage, settings, readings, guide, report)
 ```
 GitHub Actions runs all three on every push.
 

@@ -6,6 +6,7 @@ const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream',
 const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 }, permissions: ['camera'], colorScheme: process.argv[2] === 'dark' ? 'dark' : 'light' })
 const post = (p) => fetch(base + p, { method: 'POST' })
 await post('/api/demo/stop'); await post('/api/reset')
+await fetch(base + '/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_name: 'Demo user', caregiver_name: 'Demo caregiver' }) })
 const page = await ctx.newPage()
 await page.goto(base + '/')
 await page.waitForSelector('text=LIVE', { timeout: 45000 })

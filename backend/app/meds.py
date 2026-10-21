@@ -13,7 +13,9 @@ from typing import Optional
 from .config import Settings, settings as default_settings
 from .store import Store
 
-DEFAULT_MEDS = [
+# Example schedule used ONLY to build the optional simulated demo history (SEED_DEMO_HISTORY=1).
+# Real users start with an empty list and add their own medicines.
+DEMO_MEDS = [
     {"name": "Metformin", "dose": "500 mg", "times": ["08:00", "20:00"], "instructions": "Take with food.",
      "purpose": "Helps control blood sugar (type 2 diabetes)", "color": "#5b8def"},
     {"name": "Amlodipine", "dose": "5 mg", "times": ["09:00"], "instructions": "Same time every day.",
@@ -48,6 +50,9 @@ class Dose:
     history: list[str] = field(default_factory=list)
 
 
+DEMO_MED = Med("demo", "Demo medicine (SIMULATED)", "1 tablet", [], "This is a demo reminder.", "", "#9b6ce8")
+
+
 def _at(day: dt.date, hhmm: str) -> float:
     h, m = (int(x) for x in hhmm.split(":"))
     return dt.datetime.combine(day, dt.time(h, m)).timestamp()
@@ -60,7 +65,7 @@ class MedScheduler:
         now = time.time() if now is None else now
         saved = store.kv_get("meds")
         if saved is None:
-            saved = [{"id": uuid.uuid4().hex[:8], **m} for m in DEFAULT_MEDS]
+            saved = []
             store.kv_set("meds", saved)
         self.meds: dict[str, Med] = {m["id"]: Med(**m) for m in saved}
         self.start_t = store.kv_get("meds_start_t") or now   # never invent doses from before we started
@@ -95,7 +100,7 @@ class MedScheduler:
         self._ensure_doses(now)
         actions = []
         for d in sorted(self.doses.values(), key=lambda d: d.due_t):
-            med = self.meds.get(d.med_id)
+            med = self._med(d.med_id)
             if med is None or d.status in ("taken", "missed"):
                 continue
             grace = d.grace_s if d.grace_s is not None else self.cfg.med_grace_s
@@ -132,7 +137,7 @@ class MedScheduler:
     def take(self, now: float, med_id: Optional[str] = None) -> Optional[tuple[Dose, Med]]:
         """Mark the most relevant dose as taken: an overdue one first, else one due within the next hour."""
         self._ensure_doses(now)
-        cands = [d for d in self.doses.values() if (med_id is None or d.med_id == med_id) and d.med_id in self.meds]
+        cands = [d for d in self.doses.values() if (med_id is None or d.med_id == med_id) and self._med(d.med_id)]
         due = sorted((d for d in cands if d.status in ("due", "snoozed")), key=lambda d: d.due_t)
         early = sorted((d for d in cands if d.status == "upcoming" and d.due_t - now <= 3600), key=lambda d: d.due_t)
         pick = (due or early or [None])[0]
@@ -140,7 +145,7 @@ class MedScheduler:
             return None
         pick.status, pick.taken_t = "taken", now
         pick.history.append(f"taken@{now:.0f}")
-        med = self.meds[pick.med_id]
+        med = self._med(pick.med_id)
         self._finalise(pick, med)
         return pick, med
 
@@ -151,11 +156,15 @@ class MedScheduler:
         d = due[0]
         d.status, d.snooze_until = "snoozed", now + self.cfg.med_snooze_s
         d.history.append(f"snoozed@{now:.0f}")
-        return d, self.meds[d.med_id]
+        return d, self._med(d.med_id)
+
+    def _med(self, med_id: str) -> Optional[Med]:
+        return self.meds.get(med_id) or (DEMO_MED if med_id == DEMO_MED.id else None)
 
     def demo_dose(self, now: float, grace_s: float) -> Dose:
-        """SIMULATED: a dose of the first medicine that is due right now with a short grace window."""
-        med = next(iter(self.meds.values()))
+        """SIMULATED: a dose due right now with a short grace window — of the first real medicine,
+        or of a clearly labelled "Demo medicine" when no schedule has been set up yet."""
+        med = next(iter(self.meds.values()), DEMO_MED)
         d = Dose(f"{med.id}@demo{now:.0f}", med.id, now, grace_s=grace_s, demo=True)
         self.doses[d.id] = d
         return d
@@ -174,7 +183,7 @@ class MedScheduler:
         start = _at(dt.date.fromtimestamp(now), "00:00")
         out = []
         for d in sorted(self.doses.values(), key=lambda d: d.due_t):
-            med = self.meds.get(d.med_id)
+            med = self._med(d.med_id)
             if med and start <= d.due_t < start + 86400:
                 out.append({"id": d.id, "med_id": med.id, "name": med.name, "dose": med.dose, "color": med.color,
                             "instructions": med.instructions, "due_t": d.due_t, "status": d.status,
@@ -201,6 +210,8 @@ def adherence(store: Store, now: float, days: int = 7) -> dict:
         day = today - dt.timedelta(days=days - 1 - i)
         per_day[day.isoformat()] = {"date": day.isoformat(), "taken": 0, "missed": 0, "simulated": False}
     for r in store.records("dose", since=start):
+        if r.get("demo"):
+            continue   # demo-button doses never count towards real adherence
         key = dt.date.fromtimestamp(r["t"]).isoformat()
         if key in per_day and r["status"] in ("taken", "missed"):
             per_day[key][r["status"]] += 1

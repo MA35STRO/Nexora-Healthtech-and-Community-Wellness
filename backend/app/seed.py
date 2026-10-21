@@ -1,15 +1,18 @@
-"""SIMULATED 6-day history so charts aren't empty on first run. Every record is tagged simulated=True
-and the dashboard labels it. Disable with SEED_DEMO_HISTORY=0."""
+"""OPTIONAL simulated 6-day history for demos (off by default; enable with SEED_DEMO_HISTORY=1).
+Every record is tagged simulated=True and the dashboard and report label it as SIMULATED."""
 import datetime as dt
 import random
 
-from .meds import MedScheduler, _at
+from .meds import DEMO_MEDS, MedScheduler, _at
 from .store import Store
 
 
 def seed_history(store: Store, meds: MedScheduler, now: float, days: int = 6):
     if store.kv_get("seeded"):
         return
+    if not meds.meds:   # demo mode with an empty schedule: use the example schedule (also SIMULATED)
+        for m in DEMO_MEDS:
+            meds.add_med(m)
     rng = random.Random(7)
     today = dt.date.fromtimestamp(now)
     rows = []

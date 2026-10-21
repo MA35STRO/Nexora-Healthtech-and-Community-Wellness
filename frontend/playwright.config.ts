@@ -21,6 +21,6 @@ export default defineConfig({
     cwd: '../backend',
     url: 'http://127.0.0.1:8000/api/health',
     reuseExistingServer: true,
-    env: { BAYMAX_DB: ':memory:', CHECKIN_TIMEOUT_S: '20' },
+    env: { KAWAN_DB: ':memory:', CHECKIN_TIMEOUT_S: '20' },
   },
 })

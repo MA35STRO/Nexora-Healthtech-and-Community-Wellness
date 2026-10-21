@@ -241,8 +241,16 @@ def test_knowledge_finds_topics_en_bm():
 def test_brain_offline_uses_knowledge_base():
     b = Brain(Settings(anthropic_api_key=""))
     assert not b.online
-    reply, src = b.answer("what is hypoglycaemia", "en", "", [])
-    assert src == "offline" and "4 mmol/L" in reply
+    r = b.answer("what is hypoglycaemia", "en", "", [])
+    assert r["source"] == "offline" and "4 mmol/L" in r["reply"]
+    assert r["refs"] and "MOH Malaysia" in r["refs"][0]["source"]   # offline answers are always cited
+    unknown = b.answer("explain quantum chromodynamics", "en", "", [])
+    assert unknown["refs"] == [] and "pharmacist" in unknown["reply"]   # admits it doesn't know
+
+
+def test_every_knowledge_topic_is_sourced_and_bilingual():
+    for t in knowledge.topics():
+        assert t["source"] and t["en"] and t["ms"] and t["keywords"], t["id"]
 
 
 class FakeClient:
@@ -258,15 +266,26 @@ class FakeClient:
 
 
 def test_brain_uses_claude_with_grounding_and_falls_back_on_error():
-    fake = FakeClient()
+    fake = FakeClient(text="Metformin helps lower blood sugar.\nUSED: metformin")
     b = Brain(Settings(), client=fake)
-    reply, src = b.answer("what is metformin", "en", "Medicines: Metformin", [{"from": "assistant", "text": "hi"}])
-    assert src == "claude" and reply.startswith("Metformin")
+    r = b.answer("what is metformin", "en", "Medicines on their schedule: Metformin", [{"from": "assistant", "text": "hi"}],
+                 {"user_name": "Aminah", "caregiver_name": ""})
+    assert r["source"] == "claude" and r["reply"] == "Metformin helps lower blood sugar."   # USED line stripped
+    assert r["refs"] == [{"title": "Metformin", "source": "NHS: Metformin; product information"}]
     kw = fake.calls[0]
-    assert "NOT a doctor" in kw["system"] and "Metformin" in kw["system"]
-    assert kw["messages"][0]["role"] == "user"
-    reply, src = Brain(Settings(), client=FakeClient(fail=True)).answer("what is metformin", "en", "", [])
-    assert src == "offline" and "blood sugar" in reply
+    assert "NOT a doctor" in kw["system"] and "NEVER invent" in kw["system"]
+    assert "[metformin]" in kw["system"] and "Aminah" in kw["system"] and "their caregiver" in kw["system"]
+    assert kw["temperature"] <= 0.3 and kw["messages"][0]["role"] == "user"
+    r = Brain(Settings(), client=FakeClient(fail=True)).answer("what is metformin", "en", "", [])
+    assert r["source"] == "offline" and "blood sugar" in r["reply"]
+
+
+def test_claude_cannot_cite_notes_it_was_not_given():
+    fake = FakeClient(text="Something.\nUSED: metformin, made_up_id")
+    r = Brain(Settings(), client=fake).answer("what is metformin", "en", "", [])
+    assert [x["title"] for x in r["refs"]] == ["Metformin"]
+    fake.text = "General answer.\nUSED: none"
+    assert Brain(Settings(), client=fake).answer("tell me about tea", "en", "", [])["refs"] == []
 
 
 def test_pill_check_parses_json_and_rejects_unknown_match():
@@ -275,6 +294,8 @@ def test_pill_check_parses_json_and_rejects_unknown_match():
     r = Brain(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")
     assert r["matches"] == "Metformin" and r["source"] == "claude"
     fake.text = '{"medicine": "Panadol", "matches": "Panadol", "confidence": "high", "note": ""}'
+    assert Brain(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")["matches"] is None
+    fake.text = '{"medicine": "Metformin", "matches": "Metformin", "confidence": "low", "note": ""}'   # unsure → no match
     assert Brain(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")["matches"] is None
     assert Brain(Settings(anthropic_api_key="")).read_medicine("aGk=", [], "en")["source"] == "offline"
 
@@ -300,7 +321,7 @@ def test_hub_routes_med_taken_and_red_flag():
     assert "taken" in hub.user_message("I took my medicine")["reply"]
     r = hub.user_message("Saya sakit dada")
     assert r["route"] == "red_flag" and "999" in r["reply"] and hub.engine.state == "escalated"
-    assert any("BAYMAX" in s for s in hub.notifier.sent)
+    assert any("Kawan" in s for s in hub.notifier.sent)
 
 
 def test_wellness_emergency_escalates_and_records():
@@ -338,3 +359,48 @@ def test_motion_score():
     b = [[x + 0.01, y, v] for x, y, v in a]
     assert motion_score(None, a) is None
     assert motion_score(a, b) == pytest.approx(0.01)
+
+
+# ---------- no invented data ----------
+def test_fresh_install_has_no_made_up_data():
+    hub = Hub(Settings(anthropic_api_key=""), Store(":memory:"))   # real defaults
+    snap = hub.snapshot()
+    assert snap["meds"]["schedule"] == [] and snap["profile"]["user_name"] == ""
+    assert snap["vitals"]["latest"] is None and snap["vitals"]["simulated"] is False
+    hub.tick()
+    assert hub.vitals.latest() is None   # no simulated stream unless a demo asks for it
+    ins = hub.insights()
+    assert ins["wellness"] == [] and ins["vitals"] == [] and ins["adherence"]["percent"] is None
+
+
+def test_context_for_ai_states_missing_facts_instead_of_guessing():
+    hub = Hub(CFG, Store(":memory:"))
+    ctx = hub._context_text(T("10:00"))
+    assert "none entered in the app" in ctx and "Vital-sign readings: none recorded" in ctx
+    hub.set_profile({"conditions": "Type 2 diabetes", "allergies": "Penicillin"})
+    hub.add_vitals({"sys": 130, "dia": 85}, "omron")
+    ctx = hub._context_text(__import__("time").time())
+    assert "Type 2 diabetes" in ctx and "Penicillin" in ctx and "BP 130/85" in ctx and "None" not in ctx
+
+
+def test_profile_set_and_used_in_messages():
+    hub = Hub(CFG, Store(":memory:"))
+    assert hub.caregiver_label() == "your caregiver"
+    hub.set_profile({"user_name": "Aminah", "caregiver_name": "Farid", "ignored": "x"})
+    assert hub.profile()["caregiver_name"] == "Farid" and "ignored" not in hub.profile()
+
+
+def test_demo_dose_without_schedule_uses_labelled_demo_med_and_never_counts():
+    hub = Hub(CFG, Store(":memory:"))
+    d = hub.meds.demo_dose(__import__("time").time(), 60)
+    assert "Demo medicine" in hub._take_med(__import__("time").time())
+    assert d.demo and adherence(hub.store, __import__("time").time())["taken"] == 0
+
+
+def test_demo_vitals_only_simulate_during_the_demo():
+    hub = Hub(CFG, Store(":memory:"))
+    assert not hub.sim_active
+    hub.start_demo("low_spo2")
+    assert hub.sim_active
+    hub.stop_demo()
+    assert not hub.sim_active

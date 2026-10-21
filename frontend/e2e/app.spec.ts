@@ -77,11 +77,51 @@ test('daily check-in gives triage guidance', async ({ page }) => {
   await expect(page.locator('.triage')).toContainText('Keep an eye on it')
 })
 
-test('report renders and caregiver charts load', async ({ page }) => {
+test('report renders and caregiver charts load', async ({ page, request }) => {
+  await request.post('/api/meds', { data: { name: 'Metformin', dose: '500 mg', times: ['08:00'] } })
   await page.goto('/report')
   await expect(page.getByTestId('report')).toContainText('Medication adherence')
   await expect(page.getByTestId('report')).toContainText('Metformin')
   await page.goto('/caregiver')
   await expect(page.locator('.heat .cell').first()).toBeVisible()
-  await expect(page.locator('.recharts-surface').first()).toBeVisible()
+})
+
+test('fresh install shows no invented data and a welcome card', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('welcome')).toBeVisible()
+  await expect(page.getByText('No readings yet')).toBeVisible()
+  await expect(page.getByText(/No medicines scheduled/)).toBeVisible()
+  await page.goto('/caregiver')
+  await expect(page.getByText('No doses recorded yet')).toBeVisible()
+  await expect(page.getByText('No daily check-ins yet')).toBeVisible()
+})
+
+test('caregiver saves profile; a real reading appears on the companion', async ({ page }) => {
+  await page.goto('/caregiver#setup')
+  await page.getByLabel('Name of person at home').fill('Aminah')
+  await page.getByLabel('Caregiver name').fill('Farid')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByTestId('status-banner')).toContainText('Aminah')
+  await page.goto('/')
+  await expect(page.getByTestId('welcome')).toHaveCount(0)
+  await page.getByLabel('BP top (systolic)').fill('128')
+  await page.getByLabel('BP bottom (diastolic)').fill('82')
+  await page.getByRole('button', { name: 'Save reading' }).click()
+  await expect(page.locator('.vital').filter({ hasText: 'BLOOD PRESSURE' })).toContainText('128/82')
+  await expect(page.getByText(/entered by you/)).toBeVisible()
+})
+
+test('health answers show their source', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Message Kawan').fill('What is gliclazide?')
+  await page.getByLabel('Message Kawan').press('Enter')
+  await expect(page.locator('.msg.assistant').last().locator('.refs')).toContainText('NHS', { timeout: 15_000 })
+})
+
+test('how-to-use guide is reachable and bilingual', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'How to use' }).first().click()
+  await expect(page.getByTestId('guide')).toContainText('Set up in 3 minutes')
+  await page.getByRole('button', { name: 'BM' }).click()
+  await expect(page.getByTestId('guide')).toContainText('Cara menggunakan Kawan')
 })

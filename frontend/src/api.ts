@@ -35,6 +35,15 @@ export interface ChatMsg {
   text: string
   kind: 'chat' | 'checkin' | 'reminder' | 'alert'
   source: string | null
+  refs?: { title: string; source: string }[]
+}
+
+export interface Profile {
+  user_name: string
+  caregiver_name: string
+  caregiver_phone: string
+  conditions: string
+  allergies: string
 }
 
 export interface DoseView {
@@ -89,13 +98,13 @@ export interface Snapshot {
   vitals: { latest: Vitals | null; history: Vitals[]; simulated: boolean; mode: string }
   ai: { online: boolean; model: string | null }
   notify: { telegram: boolean }
-  profile: { user_name: string; caregiver_name: string }
+  profile: Profile
   config: { checkin_timeout_s: number }
 }
 
 export interface Insights {
   generated_t: number
-  profile: { user_name: string; caregiver_name: string }
+  profile: Profile
   adherence: { days: { date: string; taken: number; missed: number; simulated: boolean }[]; taken: number; missed: number; percent: number | null }
   activity: { date: string; simulated: boolean; active_min: number[]; present_min: number[] }[]
   wellness: { t: number; mood: number | null; pain: number | null; sleep_h: number | null; symptoms: string[]; note: string; level: string; simulated: boolean }[]
@@ -119,6 +128,7 @@ export interface ChatReply {
   route: string
   source: string
   action: string | null
+  refs: { title: string; source: string }[]
 }
 
 async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
@@ -147,7 +157,9 @@ export const api = {
     req<Triage>('POST', '/api/wellness', body),
   pillCheck: (image: string) =>
     req<{ medicine: string | null; matches: string | null; confidence: string; note: string; source: string }>('POST', '/api/pillcheck', { image }),
-  vitals: (v: Partial<Vitals>) => req('POST', '/api/vitals', v),
+  vitals: (v: Partial<Vitals>) => req<{ ok: boolean; alert: boolean }>('POST', '/api/vitals', v),
+  profile: () => req<Profile>('GET', '/api/profile'),
+  saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),
   demo: (name: string) => req('POST', `/api/demo/${name}`),
   demoStop: () => req('POST', '/api/demo/stop'),
   reset: () => req('POST', '/api/reset'),

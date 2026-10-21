@@ -16,12 +16,12 @@ export function BrandMark() {
 export function TopBar({ children, connected }: { children?: ReactNode; connected: boolean }) {
   return (
     <>
-      {!connected && <div className="offline-bar">Reconnecting to the BAYMAX hub…</div>}
+      {!connected && <div className="offline-bar">Reconnecting to the Kawan hub…</div>}
       <header className="topbar">
         <NavLink to="/" className="brand">
           <BrandMark />
           <span>
-            <b>BAYMAX</b>
+            <b>Kawan</b>
             <small>AI Guardian for Independent Living</small>
           </span>
         </NavLink>
@@ -29,6 +29,7 @@ export function TopBar({ children, connected }: { children?: ReactNode; connecte
           <NavLink to="/" end>Companion</NavLink>
           <NavLink to="/caregiver">Caregiver</NavLink>
           <NavLink to="/report">Report</NavLink>
+          <NavLink to="/guide">How to use</NavLink>
         </nav>
         <div className="spacer" />
         {children}

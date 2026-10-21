@@ -282,3 +282,21 @@ input[type='range'] { width: 100%; accent-color: var(--brand); }
   body { font-size: 12px; }
   .card { box-shadow: none; }
 }
+
+/* ---------- sources, readings entry, welcome, guide ---------- */
+.refs { font-size: 0.72rem; margin-top: 6px; padding-top: 5px; border-top: 1px dashed var(--line); color: var(--ink-2); }
+.vitals-entry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+.vitals-entry-grid label { display: flex; flex-direction: column; gap: 3px; }
+.vitals-entry-grid input { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); width: 100%; }
+.welcome { background: var(--brand-soft); border-color: transparent; }
+.guide { max-width: 860px; margin: 0 auto; padding: 24px 20px 40px; }
+.guide h1 { font-size: 1.7rem; margin-bottom: 6px; }
+.guide section { margin-top: 18px; }
+.guide h2 { font-size: 1.15rem; margin-bottom: 8px; }
+.guide ol, .guide ul { padding-left: 22px; margin: 6px 0; }
+.guide li { margin: 6px 0; }
+.guide .toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.guide .callout { border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.guide .callout.danger { background: var(--danger-soft); color: var(--danger); }
+.guide .callout.info { background: var(--info-soft); }
+.guide kbd { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-family: inherit; font-size: 0.9em; }

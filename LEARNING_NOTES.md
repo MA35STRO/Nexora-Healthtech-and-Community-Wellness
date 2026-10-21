@@ -1,4 +1,4 @@
-# BAYMAX — Learning Notes
+# Kawan — Learning Notes
 
 Short notes on what you must be able to explain to judges.
 

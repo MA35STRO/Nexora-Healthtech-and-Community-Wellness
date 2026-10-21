@@ -61,6 +61,7 @@ class Hub:
         self.version = 0
         self._vitals_t = 0.0
         self._vitals_saved_t = 0.0
+        self.sim_active = self.cfg.vitals_sim   # simulated vitals stream: config, or briefly during a demo
         self.browser = {"connected": 0, "fps": 0.0, "last_t": 0.0, "_n": 0, "_t": now}
 
     # ---------- perception ----------
@@ -133,15 +134,16 @@ class Hub:
                                     "Let's do your daily check-in. Please fill in the card on screen.",
                                     route, action="open_wellness")
             context, history = self._context_text(now), [m for m in self.chat[:-1] if m["from"] != "system"]
+            profile = self.profile()
 
-        reply, source = self.brain.answer(text, lang, context, history)   # slow: outside the lock
+        res = self.brain.answer(text, lang, context, history, profile)   # slow: outside the lock
         with self.lock:
-            return self._answer(reply, "ask", source=source)
+            return self._answer(res["reply"], "ask", source=res["source"], refs=res["refs"])
 
     def _answer(self, reply: str, route: str, source: str = "rules", kind: str = "chat",
-                action: Optional[str] = None) -> dict:
-        self._say("assistant", reply, kind=kind, source=source)
-        return {"reply": reply, "route": route, "source": source, "action": action}
+                action: Optional[str] = None, refs: Optional[list] = None) -> dict:
+        self._say("assistant", reply, kind=kind, source=source, refs=refs)
+        return {"reply": reply, "route": route, "source": source, "action": action, "refs": refs or []}
 
     def take_med(self, med_id: Optional[str] = None) -> dict:
         with self.lock:
@@ -221,9 +223,9 @@ class Hub:
             timed_out = self.engine.tick(now)
             self._record(timed_out)
             if timed_out:
-                self._say("assistant", (f"Saya tidak dengar balasan, jadi saya telah memaklumkan {self.cfg.caregiver_name}. "
+                self._say("assistant", (f"Saya tidak dengar balasan, jadi saya telah memaklumkan {self.caregiver_label(self.engine.lang)}. "
                                         "Bantuan sedang diminta." if self.engine.lang == "ms" else
-                                        f"I didn't hear back, so I've alerted {self.cfg.caregiver_name}. Help is on the way."),
+                                        f"I didn't hear back, so I've alerted {self.caregiver_label(self.engine.lang)}. Help is on the way."),
                           kind="alert")
             for action, dose, med in self.meds.tick(now):
                 if action == "remind":
@@ -237,7 +239,7 @@ class Hub:
                         f"{grace / 60:.0f} min" if grace >= 120 else
                         f"{med.name} {med.dose} due at {_hhmm(dose.due_t)} was not confirmed within {grace:.0f}s"],
                         "The person may have taken it without telling me.", "meds"), now)
-            if self.cfg.vitals_sim and now - self._vitals_t >= self.cfg.vitals_interval_s:
+            if self.sim_active and now - self._vitals_t >= self.cfg.vitals_interval_s:
                 self._vitals_t = now
                 det = self.vitals.add(self.sim.next(), now, "simulated")
                 self.version += 1
@@ -267,6 +269,7 @@ class Hub:
                 self.meds.demo_dose(time.time(), setup["dose_grace_s"])
             if "vitals" in setup:
                 self.sim.mode = setup["vitals"]
+                self.sim_active = True
             self._record([Event(time.time(), "demo_started",
                                 f"SIMULATED scenario started: {demo.SCENARIOS[name]['label']}", "demo")])
         threading.Thread(target=self._run_demo, args=(name, self._demo_stop), daemon=True).start()
@@ -283,6 +286,7 @@ class Hub:
         self.routine.reset()
         self.routine.override_s = None
         self.sim.mode = "normal"
+        self.sim_active = self.cfg.vitals_sim
         self.meds.clear_demo()
         self.version += 1
 
@@ -336,10 +340,10 @@ class Hub:
                 "meds": {"today": self.meds.today(now), "next": self.meds.next_dose(now),
                          "schedule": self.meds.schedule()},
                 "vitals": {"latest": self.vitals.latest(), "history": self.vitals.history(90),
-                           "simulated": self.cfg.vitals_sim, "mode": self.sim.mode},
+                           "simulated": self.sim_active, "mode": self.sim.mode},
                 "ai": {"online": self.brain.online, "model": self.cfg.anthropic_model if self.brain.online else None},
                 "notify": {"telegram": self.notifier.enabled},
-                "profile": {"user_name": self.cfg.user_name, "caregiver_name": self.cfg.caregiver_name},
+                "profile": self.profile(),
                 "config": {"checkin_timeout_s": self.cfg.checkin_timeout_s},
             }
 
@@ -354,7 +358,7 @@ class Hub:
                     by_kind[i["kind"]] = by_kind.get(i["kind"], 0) + 1
             return {
                 "generated_t": now,
-                "profile": {"user_name": self.cfg.user_name, "caregiver_name": self.cfg.caregiver_name},
+                "profile": self.profile(),
                 "adherence": adherence(self.store, now, days),
                 "activity": self.routine.heatmap(now, days),
                 "wellness": self.store.records("wellness", since=since),
@@ -365,16 +369,49 @@ class Hub:
                 "events": self.store.recent_events(200, since=since),
             }
 
+    # ---------- profile (entered by the user/caregiver; nothing is invented) ----------
+    PROFILE_FIELDS = {"user_name": 60, "caregiver_name": 60, "caregiver_phone": 30, "conditions": 300, "allergies": 200}
+
+    def profile(self) -> dict:
+        saved = self.store.kv_get("profile") or {}
+        defaults = {"user_name": self.cfg.user_name, "caregiver_name": self.cfg.caregiver_name}
+        return {k: str(saved.get(k, defaults.get(k, ""))) for k in self.PROFILE_FIELDS}
+
+    def set_profile(self, data: dict) -> dict:
+        with self.lock:
+            p = self.profile()
+            for k, limit in self.PROFILE_FIELDS.items():
+                if k in data and data[k] is not None:
+                    p[k] = str(data[k]).strip()[:limit]
+            self.store.kv_set("profile", p)
+            self.version += 1
+            return p
+
+    def caregiver_label(self, lang: str = "en") -> str:
+        return self.profile()["caregiver_name"] or ("penjaga anda" if lang == "ms" else "your caregiver")
+
     def _context_text(self, now: float) -> str:
-        meds = ", ".join(f"{m.name} {m.dose} at {'/'.join(m.times)} ({m.purpose})" for m in self.meds.meds.values())
+        """ONLY facts the app actually holds. Missing facts are stated as missing so the AI can't fill them in."""
+        p = self.profile()
+        meds = "; ".join(f"{m.name} {m.dose} at {'/'.join(m.times) or 'no set time'}"
+                         + (f" (purpose noted: {m.purpose})" if m.purpose else "") for m in self.meds.meds.values())
+        lines = [f"Medicines on their schedule: {meds or 'none entered in the app'}",
+                 f"Health conditions noted by the user/caregiver: {p['conditions'] or 'none entered'}",
+                 f"Allergies noted: {p['allergies'] or 'none entered'}"]
         nxt = self.meds.next_dose(now)
-        v = self.vitals.latest()
-        lines = [f"Medicines: {meds or 'none recorded'}"]
         if nxt:
             lines.append(f"Next dose: {nxt['name']} at {_hhmm(nxt['due_t'])} ({nxt['status']})")
+        v = self.vitals.latest()
         if v:
-            lines.append(f"Latest readings{' (SIMULATED)' if v['source'] == 'simulated' else ''}: "
-                         f"HR {v.get('hr')} bpm, SpO2 {v.get('spo2')}%, BP {v.get('sys')}/{v.get('dia')}, temp {v.get('temp')}°C")
+            parts = [f"{label} {v[k]}{unit}" for k, label, unit in
+                     (("hr", "heart rate", " bpm"), ("spo2", "SpO2", "%"), ("temp", "temperature", "°C")) if k in v]
+            if "sys" in v and "dia" in v:
+                parts.append(f"BP {v['sys']}/{v['dia']} mmHg")
+            age = round((now - v["t"]) / 60)
+            lines.append(f"Latest reading ({'SIMULATED demo data' if v['source'] == 'simulated' else v['source']}, "
+                         f"{age} min ago): " + ", ".join(parts))
+        else:
+            lines.append("Vital-sign readings: none recorded")
         lines.append(f"Current time: {dt.datetime.fromtimestamp(now).strftime('%A %H:%M')}")
         return "\n".join(lines)
 
@@ -386,16 +423,17 @@ class Hub:
             self.store.add_event(e)
             if e.kind in ("escalated", "caregiver_notice"):
                 icon = "🚨" if e.kind == "escalated" else "ℹ️"
-                self.notifier.send(f"{icon} BAYMAX — {self.cfg.user_name}: {e.message}")
+                self.notifier.send(f"{icon} Kawan — {self.profile()['user_name'] or 'your family member'}: {e.message}")
         for inc in self.engine.incidents.values():
             self.store.save_incident(inc)
         self.version += 1
 
-    def _say(self, who: str, text: Optional[str], kind: str = "chat", source: Optional[str] = None):
+    def _say(self, who: str, text: Optional[str], kind: str = "chat", source: Optional[str] = None,
+             refs: Optional[list] = None):
         if not text:
             return
         self._msg_id += 1
         self.chat.append({"id": self._msg_id, "t": time.time(), "from": who, "text": text, "kind": kind,
-                          "source": source})
+                          "source": source, "refs": refs or []})
         self.chat = self.chat[-100:]
         self.version += 1

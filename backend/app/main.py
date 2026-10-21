@@ -42,7 +42,7 @@ async def lifespan(_app):
     hub.routine.flush()
 
 
-app = FastAPI(title="BAYMAX — AI Guardian for Independent Living", lifespan=lifespan)
+app = FastAPI(title="Kawan — AI Guardian for Independent Living", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 
@@ -93,6 +93,24 @@ class PillIn(BaseModel):
 @app.get("/api/health")
 def health():
     return {"ok": True, "ai_online": hub.brain.online, "camera_mode": hub.cfg.camera_mode}
+
+
+class ProfileIn(BaseModel):
+    user_name: Optional[str] = Field(None, max_length=60)
+    caregiver_name: Optional[str] = Field(None, max_length=60)
+    caregiver_phone: Optional[str] = Field(None, max_length=30)
+    conditions: Optional[str] = Field(None, max_length=300)
+    allergies: Optional[str] = Field(None, max_length=200)
+
+
+@app.get("/api/profile")
+def profile_get():
+    return hub.profile()
+
+
+@app.post("/api/profile")
+def profile_set(body: ProfileIn):
+    return hub.set_profile(body.model_dump(exclude_none=True))
 
 
 @app.get("/api/state")

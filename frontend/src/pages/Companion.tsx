@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api, fmtTime, type Snapshot } from '../api'
 import { IconAlert, IconCamera, IconCheck, IconClipboard, IconMic, IconPill, IconSend, IconSpeaker } from '../components/icons'
 import { TopBar } from '../components/Layout'
 import { Mascot, type Mood } from '../components/Mascot'
+import { VitalsEntry } from '../components/VitalsEntry'
 import { WellnessModal } from '../components/WellnessModal'
 import { STATUS_LABEL, t, type Lang } from '../i18n'
 import { useCamera } from '../perception/useCamera'
@@ -99,8 +101,10 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   const remaining = deadline ? Math.max(0, deadline - (now + offset.current)) : 0
   const total = snap?.config.checkin_timeout_s ?? 20
   const bubbleKind = state === 'escalated' ? 'alert' : state === 'check_in' ? 'checkin' : lastAssistant?.kind === 'reminder' ? 'reminder' : ''
+  const name = snap?.profile.user_name ? ` ${snap.profile.user_name}` : ''
   const bubbleText = state === 'check_in' && snap?.pending_prompt ? snap.pending_prompt : lastAssistant?.text ??
-    (lang === 'ms' ? `Hai ${snap?.profile.user_name ?? ''}! Saya Kawan. Saya ada di sini.` : `Hi ${snap?.profile.user_name ?? ''}! I'm Kawan. I'm right here with you.`)
+    (lang === 'ms' ? `Hai${name}! Saya Kawan. Saya ada di sini.` : `Hi${name}! I'm Kawan. I'm right here with you.`)
+  const needsSetup = snap && !snap.profile.user_name && snap.meds.schedule.length === 0
 
   const pillCheck = async () => {
     const img = cam.captureFrame()
@@ -115,6 +119,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   }
 
   const v = snap?.vitals.latest
+  // most recent value of each measure (a BP-only reading shouldn't blank out the last oxygen reading)
+  const last: Partial<Record<'hr' | 'spo2' | 'sys' | 'dia' | 'temp', number>> = {}
+  for (const r of snap?.vitals.history ?? []) {
+    for (const k of ['hr', 'spo2', 'sys', 'dia', 'temp'] as const) if (r[k] != null) last[k] = r[k]
+  }
   const live = snap?.live
   const camLabel = cam.status === 'live'
     ? cam.server?.person ? `${cam.server.posture} · ${cam.server.torso_angle}°` : 'no person in view'
@@ -140,6 +149,18 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
       </TopBar>
 
       <main className="page grid companion">
+        {needsSetup && (
+          <section className="card welcome" style={{ gridColumn: '1 / -1' }} data-testid="welcome">
+            <b>{lang === 'ms' ? 'Selamat datang ke Kawan! 👋' : 'Welcome to Kawan! 👋'}</b>{' '}
+            {lang === 'ms'
+              ? 'Tetapkan nama anda, penjaga dan ubat-ubatan di halaman Penjaga, atau baca panduan ringkas dahulu.'
+              : 'Set up your name, caregiver and medicines on the Caregiver page, or read the short guide first.'}
+            <div className="row" style={{ marginTop: 10 }}>
+              <Link className="btn small primary" to="/guide">{lang === 'ms' ? 'Cara guna' : 'How to use'}</Link>
+              <Link className="btn small" to="/caregiver#setup">{lang === 'ms' ? 'Tetapan' : 'Set up now'}</Link>
+            </div>
+          </section>
+        )}
         <div className="stack">
           <section className="card">
             <div className="hero">
@@ -218,7 +239,10 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               {(snap?.chat ?? []).map((m) => (
                 <div key={m.id} className={`msg ${m.from} ${m.kind}`}>
                   {m.text}
-                  <div className="meta">{fmtTime(m.t)}{m.source === 'claude' ? ' · Claude' : m.source === 'offline' ? ' · offline' : ''}</div>
+                  {m.refs && m.refs.length > 0 && (
+                    <div className="refs">📖 {lang === 'ms' ? 'Sumber' : 'Source'}: {m.refs.map((r) => r.source).join(' · ')}</div>
+                  )}
+                  <div className="meta">{fmtTime(m.t)}{m.source === 'claude' ? ' · Claude AI' : m.source === 'offline' ? ' · offline library' : ''}</div>
                 </div>
               ))}
             </div>
@@ -298,12 +322,28 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               <div className="spacer" />
               <button className="btn small" onClick={() => setWellnessOpen(true)}><IconClipboard size={16} /> {t('dailyCheckin', lang)}</button>
             </div>
-            <div className="vitals">
-              <div className={`vital ${v?.hr && (v.hr > 120 || v.hr < 45) ? 'bad' : ''}`}><div className="u">HEART</div><div className="v">{v?.hr ?? '–'}</div><div className="u">bpm</div></div>
-              <div className={`vital ${v?.spo2 && v.spo2 < 92 ? 'bad' : ''}`}><div className="u">OXYGEN</div><div className="v">{v?.spo2 ?? '–'}</div><div className="u">% SpO2</div></div>
-              <div className={`vital ${v?.sys && v.sys >= 180 ? 'bad' : ''}`}><div className="u">BLOOD PRESSURE</div><div className="v">{v?.sys ? `${v.sys}/${v.dia}` : '–'}</div><div className="u">mmHg</div></div>
-              <div className={`vital ${v?.temp && v.temp >= 38.5 ? 'bad' : ''}`}><div className="u">TEMP</div><div className="v">{v?.temp ?? '–'}</div><div className="u">°C</div></div>
-            </div>
+            {v ? (
+              <>
+                <div className="vitals">
+                  <div className={`vital ${last.hr && (last.hr > 120 || last.hr < 45) ? 'bad' : ''}`}><div className="u">HEART</div><div className="v">{last.hr ?? '–'}</div><div className="u">bpm</div></div>
+                  <div className={`vital ${last.spo2 && last.spo2 < 92 ? 'bad' : ''}`}><div className="u">OXYGEN</div><div className="v">{last.spo2 ?? '–'}</div><div className="u">% SpO2</div></div>
+                  <div className={`vital ${last.sys && last.sys >= 180 ? 'bad' : ''}`}><div className="u">BLOOD PRESSURE</div><div className="v">{last.sys ? `${last.sys}/${last.dia}` : '–'}</div><div className="u">mmHg</div></div>
+                  <div className={`vital ${last.temp && last.temp >= 38.5 ? 'bad' : ''}`}><div className="u">TEMP</div><div className="v">{last.temp ?? '–'}</div><div className="u">°C</div></div>
+                </div>
+                <p className="tiny muted" style={{ margin: '6px 0 0' }}>
+                  {lang === 'ms' ? 'Bacaan terakhir' : 'Last reading'}: {fmtTime(v.t)} · {v.source === 'simulated' ? t('simulated', lang) : v.source === 'manual' ? (lang === 'ms' ? 'dimasukkan sendiri' : 'entered by you') : v.source}
+                </p>
+              </>
+            ) : (
+              <p className="muted small" style={{ marginTop: 0 }}>
+                {lang === 'ms' ? 'Tiada bacaan lagi. Masukkan bacaan daripada mesin tekanan darah, oksimeter atau termometer anda.'
+                  : 'No readings yet. Enter a reading from your blood pressure monitor, oximeter or thermometer.'}
+              </p>
+            )}
+            <details style={{ marginTop: 10 }} open={!v}>
+              <summary className="small" style={{ cursor: 'pointer', fontWeight: 800 }}>{lang === 'ms' ? '+ Tambah bacaan' : '+ Add a reading'}</summary>
+              <VitalsEntry lang={lang} />
+            </details>
           </section>
         </div>
       </main>

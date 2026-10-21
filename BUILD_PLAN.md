@@ -1,4 +1,4 @@
-# BAYMAX — Build Plan (UTP CodeFest 2026 HealthTech)
+# Kawan — Build Plan (UTP CodeFest 2026 HealthTech)
 
 AI home health & safety companion. Prototype only — not a medical device.
 
@@ -76,6 +76,10 @@ Demo data is tagged `source: "demo"` and shown as SIMULATED.
   scheduler, learned inactivity, simulated vitals + device API, wellness triage with EN/BM red flags, Claude with
   offline knowledge-base fallback, pill-label check, Telegram alerts, voice + "Hey Kawan", Kawan mascot, caregiver
   dashboard with charts, printable doctor report. Tests: 97 pytest, 12 vitest, 8 Playwright e2e (fake webcam).
+- **Day 3:** Renamed to Kawan. Removed all invented data (no default patient/meds, no simulated vitals or history
+  unless a demo asks). Readings entry + profile settings. Knowledge base 34 → 71 topics, each with a cited source;
+  Claude grounded on retrieved notes (temperature 0.2, "USED:" citations shown under answers, must not invent).
+  In-app bilingual "How to use" guide. Fuzzy "Hey Kawan" wake matching + mic status. Tests: 104 pytest, 19 vitest, 12 e2e.
 
 ## Known limitations (be honest with judges)
 - Fall detection is heuristic, untested clinically; single-camera, single-person.

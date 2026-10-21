@@ -1,4 +1,4 @@
-# Share BAYMAX on phones / other devices with a temporary public HTTPS link (Cloudflare quick tunnel).
+# Share Kawan on phones / other devices with a temporary public HTTPS link (Cloudflare quick tunnel).
 # Phones need HTTPS for camera access, which this provides. No Cloudflare account needed.
 #
 #   .\tunnel.ps1            start app (if needed) + tunnel, print the link, Ctrl+C to stop
@@ -41,7 +41,7 @@ if (-not (Test-Health 'http://127.0.0.1:8000')) {
   }
   $py = Join-Path $root 'backend\.venv\Scripts\python.exe'
   if (-not (Test-Path $py)) { throw 'Python environment missing - run .\start.ps1 once first.' }
-  Write-Host 'Starting the BAYMAX hub...'
+  Write-Host 'Starting the Kawan hub...'
   $server = Start-Process $py -ArgumentList '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000' `
     -WorkingDirectory (Join-Path $root 'backend') -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server.err.log')
@@ -75,7 +75,7 @@ try {
 
   try { Set-Clipboard $url } catch {}
   Write-Host ''
-  Write-Host '  BAYMAX is live for phones and other devices:' -ForegroundColor Green
+  Write-Host '  Kawan is live for phones and other devices:' -ForegroundColor Green
   Write-Host ''
   Write-Host "    Patient (companion):  $url" -ForegroundColor Cyan
   Write-Host "    Caregiver dashboard:  $url/caregiver" -ForegroundColor Cyan
