@@ -1,4 +1,5 @@
-"""End-to-end: demo scenario → detector → engine → store → API. Runs in real time (~10s each)."""
+"""End-to-end: demo scenario → fall detector → safety engine → database → API. Runs in real time (~10s each)."""
+
 import time
 
 import pytest
@@ -6,13 +7,13 @@ from fastapi.testclient import TestClient
 
 import app.main as main
 from app.config import Settings
+from app.database import Database
 from app.hub import Hub
-from app.store import Store
 
 
 @pytest.fixture
 def client(monkeypatch):
-    hub = Hub(Settings(checkin_timeout_s=3), Store(":memory:"))
+    hub = Hub(Settings(checkin_timeout_s=3), Database(":memory:"))
     monkeypatch.setattr(main, "hub", hub)
     with TestClient(main.app) as c:
         yield c, hub
@@ -31,7 +32,7 @@ def test_fall_no_response_escalates_and_caregiver_resolves(client):
     c, hub = client
     assert c.post("/api/demo/fall_no_response").status_code == 200
     assert wait_for(lambda: hub.engine.state == "check_in")
-    assert wait_for(lambda: hub.engine.state == "escalated", timeout=6)   # 3s timeout in this test
+    assert wait_for(lambda: hub.engine.state == "escalated", timeout=6)  # 3s timeout in this test
     s = c.get("/api/state").json()
     inc = s["active_incident"]
     assert inc["user_response"] == "no_response" and inc["severity"] == "critical"

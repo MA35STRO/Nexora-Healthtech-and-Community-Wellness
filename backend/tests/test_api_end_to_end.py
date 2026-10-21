@@ -1,22 +1,23 @@
-"""End-to-end over HTTP/WebSocket: browser perception, new demo scenarios, meds, vitals, wellness API."""
+"""End-to-end over HTTP/WebSocket: browser pose stream, demo scenarios, medicines, vitals, daily check-in."""
+
 import time
 
 import pytest
 from fastapi.testclient import TestClient
+from test_demo_scenarios import wait_for
+from test_health_features import pose
 
 import app.main as main
 from app.config import Settings
+from app.database import Database
 from app.hub import Hub
-from app.store import Store
-
-from test_features import pose
-from test_pipeline import wait_for
 
 
 def make(**kw):
-    cfg = Settings(**{"checkin_timeout_s": 3, "seed_history": False, "vitals_sim": False,
-                      "anthropic_api_key": "", **kw})
-    return Hub(cfg, Store(":memory:"))
+    cfg = Settings(
+        **{"checkin_timeout_s": 3, "seed_history": False, "vitals_sim": False, "anthropic_api_key": "", **kw}
+    )
+    return Hub(cfg, Database(":memory:"))
 
 
 @pytest.fixture
@@ -36,9 +37,11 @@ def test_browser_landmarks_detect_a_real_fall(client):
     c, hub = client
     up, down = pose(True), pose(False)
     with c.websocket_connect("/ws/perception") as ws:
+
         def send(lm, motion=0.01):
             ws.send_json({"lm": lm, "motion": motion})
             return ws.receive_json()
+
         for _ in range(15):
             assert send(up)["posture"] == "standing"
             time.sleep(0.05)
@@ -71,7 +74,7 @@ def test_demo_inactivity_checks_in_then_escalates(client):
     assert hub.engine.active.kind == "inactivity"
     assert wait_for(lambda: hub.engine.state == "escalated", timeout=6)
     c.post("/api/demo/stop")
-    assert hub.routine.override_s is None
+    assert hub.inactivity.override_s is None
 
 
 def test_demo_red_flag(client):
@@ -89,8 +92,10 @@ def test_demo_med_taken_and_missed(monkeypatch):
         assert wait_for(lambda: any(e["kind"] == "med_taken" for e in hub.store.recent_events()), timeout=12)
         assert any(m["kind"] == "reminder" for m in hub.chat)
         c.post("/api/demo/med_missed")
-        assert wait_for(lambda: any(i.kind == "missed_medication" for i in hub.engine.incidents.values()), timeout=20)
-        assert hub.engine.state == "attention"   # a notice, not an emergency
+        assert wait_for(
+            lambda: any(i.kind == "missed_medication" for i in hub.engine.incidents.values()), timeout=20
+        )
+        assert hub.engine.state == "attention"  # a notice, not an emergency
 
 
 def test_demo_low_spo2_with_fast_simulator(monkeypatch):
@@ -146,7 +151,7 @@ def test_chat_offline_answer_and_pillcheck(client):
 
 
 def test_seeded_history_is_labelled_simulated():
-    hub = Hub(Settings(seed_history=True, vitals_sim=False, anthropic_api_key=""), Store(":memory:"))
+    hub = Hub(Settings(seed_history=True, vitals_sim=False, anthropic_api_key=""), Database(":memory:"))
     ins = hub.insights()
     assert ins["adherence"]["taken"] > 0
     assert all(r["simulated"] for r in ins["wellness"])

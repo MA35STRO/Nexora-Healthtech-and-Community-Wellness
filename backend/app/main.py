@@ -2,6 +2,7 @@
 
 Serves the built dashboard (frontend/dist) on the same port, so one command runs everything.
 """
+
 import asyncio
 import base64
 import binascii
@@ -13,11 +14,11 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import wellness
+from . import daily_checkin
 from .hub import Hub
 
 hub = Hub()
@@ -26,25 +27,26 @@ DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 def _ticker(stop: threading.Event):
     while not stop.wait(0.5):
-        hub.tick()   # drives check-in timeouts, medication clock, simulated vitals
+        hub.tick()  # drives check-in timeouts, medication clock, simulated vitals
 
 
 @asynccontextmanager
 async def lifespan(_app):
     stop = threading.Event()
     threading.Thread(target=_ticker, args=(stop,), daemon=True).start()
-    if hub.cfg.camera_mode == "server":
-        hub.camera.start()
     yield
     stop.set()
     hub.stop_demo()
-    hub.camera.stop()
-    hub.routine.flush()
+    hub.inactivity.flush()
 
 
 app = FastAPI(title="Kawan — AI Guardian for Independent Living", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-                   allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ChatIn(BaseModel):
@@ -87,12 +89,12 @@ class WellnessIn(BaseModel):
 
 
 class PillIn(BaseModel):
-    image: str   # base64 JPEG (data: URL prefix allowed), sent only when the user taps "Check my medicine"
+    image: str  # base64 JPEG (data: URL prefix allowed), sent only when the user taps "Check my medicine"
 
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "ai_online": hub.brain.online, "camera_mode": hub.cfg.camera_mode}
+    return {"ok": True, "ai_online": hub.brain.online}
 
 
 class ProfileIn(BaseModel):
@@ -196,7 +198,7 @@ def vitals_add(body: VitalsIn):
 
 @app.get("/api/wellness/options")
 def wellness_options():
-    return {"symptoms": wellness.SYMPTOM_CHOICES, "hotlines": wellness.HOTLINES}
+    return {"symptoms": daily_checkin.SYMPTOM_CHOICES, "hotlines": daily_checkin.HOTLINES}
 
 
 @app.post("/api/wellness")
@@ -216,7 +218,7 @@ def pill_check(body: PillIn):
     return hub.pill_check(raw)
 
 
-# ---------- demo / camera / reset ----------
+# ---------- demo / reset ----------
 @app.post("/api/demo/stop")
 def demo_stop():
     hub.stop_demo()
@@ -232,34 +234,10 @@ def demo_start(name: str):
     return {"ok": True}
 
 
-@app.post("/api/camera/{action}")
-def camera(action: str):
-    """Server-side OpenCV camera (CAMERA_MODE=server). The default browser camera needs no endpoint."""
-    if action == "start":
-        hub.camera.start()
-    elif action == "stop":
-        hub.camera.stop()
-    else:
-        raise HTTPException(404)
-    return {"ok": True}
-
-
 @app.post("/api/reset")
 def reset():
     hub.reset()
     return {"ok": True}
-
-
-@app.get("/api/video.mjpg")
-def video():
-    """Motion-JPEG stream of the server camera (server mode only). Server binds to 127.0.0.1 only."""
-    def gen():
-        while hub.camera.running:
-            frame = hub.camera.last_jpeg
-            if frame:
-                yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-            time.sleep(1 / 20)
-    return StreamingResponse(gen(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 # ---------- websockets ----------

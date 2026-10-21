@@ -4,19 +4,21 @@ The LLM NEVER decides anything safety-related: falls, check-ins, escalation, red
 state are all handled by deterministic code before a message ever gets here.
 
 Accuracy rules:
-  * Each question retrieves the best-matching notes from the curated, source-cited knowledge base.
+  * Each question retrieves the best-matching notes from the curated, source-cited health library.
   * Claude must prefer those notes, must not invent numbers/doses/phone numbers/personal facts,
     and must say it is not sure rather than guess.
   * Claude reports which notes it used ("USED: id, id"); the app shows their sources under the answer.
-  * No API key / no internet / any error → the offline knowledge base answers (always cited).
+  * No API key / no internet / any error → the offline health library answers (always cited).
 """
+
 import json
 import logging
 import re
 from typing import Optional
 
-from . import knowledge
-from .config import Settings, settings as default_settings
+from . import health_library
+from .config import Settings
+from .config import settings as default_settings
 
 log = logging.getLogger("kawan.llm")
 
@@ -62,41 +64,55 @@ Never guess a medicine from the pill's colour or shape. Do not give dosing advic
 USED_RE = re.compile(r"\n?\s*USED:\s*(.*)\s*$", re.I)
 
 
-class Brain:
+class AIAnswers:
     def __init__(self, cfg: Settings = default_settings, client=None):
         self.cfg = cfg
         self.client = client
         if client is None and cfg.anthropic_api_key:
             try:
                 import anthropic
-                self.client = anthropic.Anthropic(api_key=cfg.anthropic_api_key, timeout=cfg.llm_timeout_s,
-                                                  max_retries=1)
-            except Exception as e:   # SDK missing or bad config → offline mode
+
+                self.client = anthropic.Anthropic(
+                    api_key=cfg.anthropic_api_key, timeout=cfg.llm_timeout_s, max_retries=1
+                )
+            except Exception as e:  # SDK missing or bad config → offline mode
                 log.warning("Claude unavailable: %s", e)
 
     @property
     def online(self) -> bool:
         return self.client is not None
 
-    def answer(self, text: str, lang: str, context: str, history: list[dict],
-               profile: Optional[dict] = None) -> dict:
+    def answer(
+        self, text: str, lang: str, context: str, history: list[dict], profile: Optional[dict] = None
+    ) -> dict:
         """Returns {"reply", "source": "claude"|"offline", "refs": [{"title", "source"}]}."""
         profile = profile or {}
-        hits = [t for score, t in knowledge.search(text, k=3) if score >= 1]
+        hits = [t for score, t in health_library.search(text, k=3) if score >= 1]
         if self.client is not None:
             try:
-                notes = "\n".join(f"[{t['id']}] {t['title']} (source: {t['source']}): {t['en']}" for t in hits) \
+                notes = (
+                    "\n".join(f"[{t['id']}] {t['title']} (source: {t['source']}): {t['en']}" for t in hits)
                     or "(no matching notes — answer only if it is well-established general information)"
-                msgs = [{"role": "user" if m["from"] == "user" else "assistant", "content": m["text"]}
-                        for m in history[-6:] if m.get("text")]
+                )
+                msgs = [
+                    {"role": "user" if m["from"] == "user" else "assistant", "content": m["text"]}
+                    for m in history[-6:]
+                    if m.get("text")
+                ]
                 msgs = _alternate(msgs + [{"role": "user", "content": text}])
                 resp = self.client.messages.create(
-                    model=self.cfg.anthropic_model, max_tokens=450, temperature=0.2,
-                    system=SYSTEM.format(name=profile.get("user_name") or "the user",
-                                         caregiver=profile.get("caregiver_name") or "their caregiver",
-                                         lang_name="Bahasa Melayu" if lang == "ms" else "English",
-                                         context=context or "(none)", notes=notes),
-                    messages=msgs)
+                    model=self.cfg.anthropic_model,
+                    max_tokens=450,
+                    temperature=0.2,
+                    system=SYSTEM.format(
+                        name=profile.get("user_name") or "the user",
+                        caregiver=profile.get("caregiver_name") or "their caregiver",
+                        lang_name="Bahasa Melayu" if lang == "ms" else "English",
+                        context=context or "(none)",
+                        notes=notes,
+                    ),
+                    messages=msgs,
+                )
                 raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
                 reply, used = _split_used(raw)
                 if reply:
@@ -109,43 +125,82 @@ class Brain:
 
     def read_medicine(self, image_b64: str, med_names: list[str], lang: str) -> dict:
         if self.client is None:
-            return {"medicine": None, "matches": None, "confidence": "low", "source": "offline",
-                    "note": "Pill check needs an internet connection and an API key. Please confirm your medicine "
-                            "against the list on screen." if lang != "ms" else
-                            "Semakan ubat memerlukan internet dan kunci API. Sila sahkan ubat anda dengan senarai di skrin."}
+            return {
+                "medicine": None,
+                "matches": None,
+                "confidence": "low",
+                "source": "offline",
+                "note": "Pill check needs an internet connection and an API key. Please confirm your medicine "
+                "against the list on screen."
+                if lang != "ms"
+                else "Semakan ubat memerlukan internet dan kunci API. Sila sahkan ubat anda dengan senarai di skrin.",
+            }
         try:
             resp = self.client.messages.create(
-                model=self.cfg.anthropic_model, max_tokens=300, temperature=0,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64}},
-                    {"type": "text", "text": VISION_PROMPT.format(names=", ".join(med_names) or "none",
-                                                                  lang_name="Bahasa Melayu" if lang == "ms" else "English")},
-                ]}])
+                model=self.cfg.anthropic_model,
+                max_tokens=300,
+                temperature=0,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64},
+                            },
+                            {
+                                "type": "text",
+                                "text": VISION_PROMPT.format(
+                                    names=", ".join(med_names) or "none",
+                                    lang_name="Bahasa Melayu" if lang == "ms" else "English",
+                                ),
+                            },
+                        ],
+                    }
+                ],
+            )
             raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             m = re.search(r"\{.*\}", raw, re.S)
             data = json.loads(m.group(0)) if m else {}
             if data.get("matches") not in med_names:
                 data["matches"] = None
             if data.get("confidence") == "low":
-                data["matches"] = None   # never confirm a medicine on a low-confidence read
-            return {"medicine": data.get("medicine"), "strength": data.get("strength"), "matches": data.get("matches"),
-                    "confidence": data.get("confidence", "low"), "note": data.get("note", ""), "source": "claude"}
+                data["matches"] = None  # never confirm a medicine on a low-confidence read
+            return {
+                "medicine": data.get("medicine"),
+                "strength": data.get("strength"),
+                "matches": data.get("matches"),
+                "confidence": data.get("confidence", "low"),
+                "note": data.get("note", ""),
+                "source": "claude",
+            }
         except Exception as e:
             log.warning("Pill check failed: %s", e)
-            return {"medicine": None, "matches": None, "confidence": "low", "source": "error",
-                    "note": "I couldn't read that. Please try again with the label facing the camera, in good light."}
+            return {
+                "medicine": None,
+                "matches": None,
+                "confidence": "low",
+                "source": "error",
+                "note": "I couldn't read that. Please try again with the label facing the camera, in good light.",
+            }
 
 
 def offline_answer(text: str, lang: str) -> dict:
-    hits = [(s, t) for s, t in knowledge.search(text, k=3) if s >= 1]
+    hits = [(s, t) for s, t in health_library.search(text, k=3) if s >= 1]
     if not hits:
-        return {"reply": knowledge.FALLBACK["ms" if lang == "ms" else "en"], "source": "offline", "refs": []}
+        return {
+            "reply": health_library.FALLBACK["ms" if lang == "ms" else "en"],
+            "source": "offline",
+            "refs": [],
+        }
     best = hits[0][1]
     reply = best["ms" if lang == "ms" else "en"]
     related = [t for s, t in hits[1:] if s >= 0.6 * hits[0][0]]
     if related:
         titles = ", ".join(t["title"] for t in related)
-        reply += (f" Saya juga boleh terangkan: {titles}." if lang == "ms" else f" I can also explain: {titles}.")
+        reply += (
+            f" Saya juga boleh terangkan: {titles}." if lang == "ms" else f" I can also explain: {titles}."
+        )
     return {"reply": reply, "source": "offline", "refs": [_ref(best)]}
 
 
@@ -157,8 +212,10 @@ def _split_used(raw: str) -> tuple[str, list[str]]:
     m = USED_RE.search(raw)
     if not m:
         return raw.strip(), []
-    ids = [] if m.group(1).strip().lower() == "none" else [i.strip().strip("[]") for i in m.group(1).split(",")]
-    return raw[:m.start()].strip(), [i for i in ids if i]
+    ids = (
+        [] if m.group(1).strip().lower() == "none" else [i.strip().strip("[]") for i in m.group(1).split(",")]
+    )
+    return raw[: m.start()].strip(), [i for i in ids if i]
 
 
 def _alternate(msgs: list[dict]) -> list[dict]:

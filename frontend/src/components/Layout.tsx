@@ -8,7 +8,10 @@ export function BrandMark() {
       <rect x="11" y="15" width="18" height="13" rx="6.5" fill="#0d2b2d" />
       <ellipse cx="16.5" cy="21.5" rx="1.8" ry="2.2" fill="#7fe3d0" />
       <ellipse cx="23.5" cy="21.5" rx="1.8" ry="2.2" fill="#7fe3d0" />
-      <path d="M20 5.5c-1-1.6-3.4-1-2.7.9.5 1.2 2.7 2.4 2.7 2.4s2.2-1.2 2.7-2.4c.7-1.9-1.7-2.5-2.7-.9z" fill="#ff8fa3" />
+      <path
+        d="M20 5.5c-1-1.6-3.4-1-2.7.9.5 1.2 2.7 2.4 2.7 2.4s2.2-1.2 2.7-2.4c.7-1.9-1.7-2.5-2.7-.9z"
+        fill="#ff8fa3"
+      />
     </svg>
   )
 }
@@ -26,7 +29,9 @@ export function TopBar({ children, connected }: { children?: ReactNode; connecte
           </span>
         </NavLink>
         <nav className="nav">
-          <NavLink to="/" end>Companion</NavLink>
+          <NavLink to="/" end>
+            Companion
+          </NavLink>
           <NavLink to="/caregiver">Caregiver</NavLink>
           <NavLink to="/report">Report</NavLink>
           <NavLink to="/guide">How to use</NavLink>

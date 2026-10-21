@@ -1,4 +1,4 @@
-// Pure helpers for the browser perception loop (unit-tested in geometry.test.ts).
+// Pure helpers for the browser camera loop (unit-tested in poseMath.test.ts).
 
 export interface Landmark {
   x: number
@@ -34,8 +34,20 @@ export function motionScore(prev: Packed | null, cur: Packed): number | null {
 
 /** Body skeleton edges drawn on the overlay (MediaPipe pose indices). */
 export const SKELETON: [number, number][] = [
-  [11, 12], [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28],
-  [11, 13], [13, 15], [12, 14], [14, 16], [0, 11], [0, 12],
+  [11, 12],
+  [11, 23],
+  [12, 24],
+  [23, 24],
+  [23, 25],
+  [24, 26],
+  [25, 27],
+  [26, 28],
+  [11, 13],
+  [13, 15],
+  [12, 14],
+  [14, 16],
+  [0, 11],
+  [0, 12],
 ]
 
 /** Frame throttle: true when enough time has passed since the last processed frame. */

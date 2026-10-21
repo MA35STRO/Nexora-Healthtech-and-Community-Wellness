@@ -1,0 +1,8 @@
+# Code style settings for the backend (ruff = formatter + linter: `ruff format` and `ruff check`).
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E731", "E501"]   # short lambdas are fine; long lines are only user-facing text

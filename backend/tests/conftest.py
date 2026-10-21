@@ -1,4 +1,5 @@
 """Tests always run offline and deterministic: no API key, no Telegram, regardless of backend/.env."""
+
 import os
 
 os.environ["ANTHROPIC_API_KEY"] = ""

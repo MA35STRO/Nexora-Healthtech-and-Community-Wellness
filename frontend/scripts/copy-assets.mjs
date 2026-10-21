@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
 const wasmSrc = resolve(root, 'node_modules/@mediapipe/tasks-vision/wasm')
-const modelSrc = resolve(root, '../backend/models/pose_landmarker_lite.task')
+const modelSrc = resolve(root, 'models/pose_landmarker_lite.task')
 
 mkdirSync(resolve(root, 'public/mediapipe'), { recursive: true })
 cpSync(wasmSrc, resolve(root, 'public/mediapipe/wasm'), { recursive: true })

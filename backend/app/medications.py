@@ -5,23 +5,43 @@ Each scheduled dose moves through:
                                    ↘ snoozed → due again
                                    ↘ missed  (after the grace window → caregiver notice)
 """
+
 import datetime as dt
 import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-from .config import Settings, settings as default_settings
-from .store import Store
+from .config import Settings
+from .config import settings as default_settings
+from .database import Database
 
 # Example schedule used ONLY to build the optional simulated demo history (SEED_DEMO_HISTORY=1).
 # Real users start with an empty list and add their own medicines.
 DEMO_MEDS = [
-    {"name": "Metformin", "dose": "500 mg", "times": ["08:00", "20:00"], "instructions": "Take with food.",
-     "purpose": "Helps control blood sugar (type 2 diabetes)", "color": "#5b8def"},
-    {"name": "Amlodipine", "dose": "5 mg", "times": ["09:00"], "instructions": "Same time every day.",
-     "purpose": "Lowers blood pressure", "color": "#f2a541"},
-    {"name": "Atorvastatin", "dose": "20 mg", "times": ["21:00"], "instructions": "Take in the evening.",
-     "purpose": "Lowers cholesterol", "color": "#47b39d"},
+    {
+        "name": "Metformin",
+        "dose": "500 mg",
+        "times": ["08:00", "20:00"],
+        "instructions": "Take with food.",
+        "purpose": "Helps control blood sugar (type 2 diabetes)",
+        "color": "#5b8def",
+    },
+    {
+        "name": "Amlodipine",
+        "dose": "5 mg",
+        "times": ["09:00"],
+        "instructions": "Same time every day.",
+        "purpose": "Lowers blood pressure",
+        "color": "#f2a541",
+    },
+    {
+        "name": "Atorvastatin",
+        "dose": "20 mg",
+        "times": ["21:00"],
+        "instructions": "Take in the evening.",
+        "purpose": "Lowers cholesterol",
+        "color": "#47b39d",
+    },
 ]
 
 
@@ -41,8 +61,8 @@ class Dose:
     id: str
     med_id: str
     due_t: float
-    status: str = "upcoming"          # upcoming | due | snoozed | taken | missed
-    grace_s: Optional[float] = None   # per-dose override (demo); else cfg.med_grace_s
+    status: str = "upcoming"  # upcoming | due | snoozed | taken | missed
+    grace_s: Optional[float] = None  # per-dose override (demo); else cfg.med_grace_s
     reminded_t: Optional[float] = None
     snooze_until: Optional[float] = None
     taken_t: Optional[float] = None
@@ -59,8 +79,9 @@ def _at(day: dt.date, hhmm: str) -> float:
 
 
 class MedScheduler:
-    def __init__(self, store: Store, cfg: Settings = default_settings, now: Optional[float] = None):
+    def __init__(self, store: Database, cfg: Settings = default_settings, now: Optional[float] = None):
         import time
+
         self.cfg, self.store = cfg, store
         now = time.time() if now is None else now
         saved = store.kv_get("meds")
@@ -68,27 +89,34 @@ class MedScheduler:
             saved = []
             store.kv_set("meds", saved)
         self.meds: dict[str, Med] = {m["id"]: Med(**m) for m in saved}
-        self.start_t = store.kv_get("meds_start_t") or now   # never invent doses from before we started
+        self.start_t = store.kv_get("meds_start_t") or now  # never invent doses from before we started
         store.kv_set("meds_start_t", self.start_t)
         self.doses: dict[str, Dose] = {}
-        for r in store.records("dose", since=now - 2 * 86400):   # survive restarts: don't re-remind
+        for r in store.records("dose", since=now - 2 * 86400):  # survive restarts: don't re-remind
             if not r.get("demo"):
                 did = f"{r['med_id']}@{r['t']:.0f}"
                 self.doses[did] = Dose(did, r["med_id"], r["t"], r["status"], taken_t=r.get("taken_t"))
 
     # ---------- schedule management ----------
     def add_med(self, data: dict) -> Med:
-        med = Med(id=uuid.uuid4().hex[:8], name=data["name"].strip()[:60], dose=data.get("dose", "").strip()[:30],
-                  times=sorted({t for t in data.get("times", []) if _valid_time(t)}),
-                  instructions=data.get("instructions", "")[:200], purpose=data.get("purpose", "")[:200],
-                  color=data.get("color", "#5b8def"))
+        med = Med(
+            id=uuid.uuid4().hex[:8],
+            name=data["name"].strip()[:60],
+            dose=data.get("dose", "").strip()[:30],
+            times=sorted({t for t in data.get("times", []) if _valid_time(t)}),
+            instructions=data.get("instructions", "")[:200],
+            purpose=data.get("purpose", "")[:200],
+            color=data.get("color", "#5b8def"),
+        )
         self.meds[med.id] = med
         self._save()
         return med
 
     def remove_med(self, med_id: str):
         self.meds.pop(med_id)
-        self.doses = {k: d for k, d in self.doses.items() if d.med_id != med_id or d.status in ("taken", "missed")}
+        self.doses = {
+            k: d for k, d in self.doses.items() if d.med_id != med_id or d.status in ("taken", "missed")
+        }
         self._save()
 
     def _save(self):
@@ -130,16 +158,23 @@ class MedScheduler:
                     if due >= self.start_t and did not in self.doses:
                         self.doses[did] = Dose(did, med.id, due)
         # forget finished doses older than 2 days (they are in the records table)
-        self.doses = {k: d for k, d in self.doses.items()
-                      if not (d.status in ("taken", "missed") and d.due_t < now - 2 * 86400)}
+        self.doses = {
+            k: d
+            for k, d in self.doses.items()
+            if not (d.status in ("taken", "missed") and d.due_t < now - 2 * 86400)
+        }
 
     # ---------- user actions ----------
     def take(self, now: float, med_id: Optional[str] = None) -> Optional[tuple[Dose, Med]]:
         """Mark the most relevant dose as taken: an overdue one first, else one due within the next hour."""
         self._ensure_doses(now)
-        cands = [d for d in self.doses.values() if (med_id is None or d.med_id == med_id) and self._med(d.med_id)]
+        cands = [
+            d for d in self.doses.values() if (med_id is None or d.med_id == med_id) and self._med(d.med_id)
+        ]
         due = sorted((d for d in cands if d.status in ("due", "snoozed")), key=lambda d: d.due_t)
-        early = sorted((d for d in cands if d.status == "upcoming" and d.due_t - now <= 3600), key=lambda d: d.due_t)
+        early = sorted(
+            (d for d in cands if d.status == "upcoming" and d.due_t - now <= 3600), key=lambda d: d.due_t
+        )
         pick = (due or early or [None])[0]
         if pick is None:
             return None
@@ -174,9 +209,19 @@ class MedScheduler:
 
     # ---------- views ----------
     def _finalise(self, d: Dose, med: Med):
-        self.store.add_record("dose", d.due_t, {"med_id": med.id, "name": med.name, "dose": med.dose,
-                                                "status": d.status, "taken_t": d.taken_t, "demo": d.demo,
-                                                "simulated": d.demo})
+        self.store.add_record(
+            "dose",
+            d.due_t,
+            {
+                "med_id": med.id,
+                "name": med.name,
+                "dose": med.dose,
+                "status": d.status,
+                "taken_t": d.taken_t,
+                "demo": d.demo,
+                "simulated": d.demo,
+            },
+        )
 
     def today(self, now: float) -> list[dict]:
         self._ensure_doses(now)
@@ -185,13 +230,26 @@ class MedScheduler:
         for d in sorted(self.doses.values(), key=lambda d: d.due_t):
             med = self._med(d.med_id)
             if med and start <= d.due_t < start + 86400:
-                out.append({"id": d.id, "med_id": med.id, "name": med.name, "dose": med.dose, "color": med.color,
-                            "instructions": med.instructions, "due_t": d.due_t, "status": d.status,
-                            "taken_t": d.taken_t, "demo": d.demo})
+                out.append(
+                    {
+                        "id": d.id,
+                        "med_id": med.id,
+                        "name": med.name,
+                        "dose": med.dose,
+                        "color": med.color,
+                        "instructions": med.instructions,
+                        "due_t": d.due_t,
+                        "status": d.status,
+                        "taken_t": d.taken_t,
+                        "demo": d.demo,
+                    }
+                )
         return out
 
     def next_dose(self, now: float) -> Optional[dict]:
-        upcoming = [d for d in self.today(now) + self._tomorrow(now) if d["status"] in ("upcoming", "due", "snoozed")]
+        upcoming = [
+            d for d in self.today(now) + self._tomorrow(now) if d["status"] in ("upcoming", "due", "snoozed")
+        ]
         return upcoming[0] if upcoming else None
 
     def _tomorrow(self, now: float) -> list[dict]:
@@ -201,7 +259,7 @@ class MedScheduler:
         return [asdict(m) for m in self.meds.values()]
 
 
-def adherence(store: Store, now: float, days: int = 7) -> dict:
+def adherence(store: Database, now: float, days: int = 7) -> dict:
     """Per-day taken/missed counts plus overall %, from finalised dose records."""
     today = dt.date.fromtimestamp(now)
     start = _at(today - dt.timedelta(days=days - 1), "00:00")
@@ -211,15 +269,19 @@ def adherence(store: Store, now: float, days: int = 7) -> dict:
         per_day[day.isoformat()] = {"date": day.isoformat(), "taken": 0, "missed": 0, "simulated": False}
     for r in store.records("dose", since=start):
         if r.get("demo"):
-            continue   # demo-button doses never count towards real adherence
+            continue  # demo-button doses never count towards real adherence
         key = dt.date.fromtimestamp(r["t"]).isoformat()
         if key in per_day and r["status"] in ("taken", "missed"):
             per_day[key][r["status"]] += 1
             per_day[key]["simulated"] |= bool(r.get("simulated"))
     taken = sum(d["taken"] for d in per_day.values())
     missed = sum(d["missed"] for d in per_day.values())
-    return {"days": list(per_day.values()), "taken": taken, "missed": missed,
-            "percent": round(100 * taken / (taken + missed)) if taken + missed else None}
+    return {
+        "days": list(per_day.values()),
+        "taken": taken,
+        "missed": missed,
+        "percent": round(100 * taken / (taken + missed)) if taken + missed else None,
+    }
 
 
 def _valid_time(t: str) -> bool:

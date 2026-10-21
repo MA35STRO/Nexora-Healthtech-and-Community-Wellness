@@ -28,9 +28,9 @@ function pickVoice(lang: Lang): SpeechSynthesisVoice | undefined {
 
 interface Options {
   lang: Lang
-  enabled: boolean          // user turned voice on (needed: browsers require a tap before audio)
-  handsFree: boolean        // always listening for the wake phrase
-  awaitingAnswer: boolean   // a check-in is pending
+  enabled: boolean // user turned voice on (needed: browsers require a tap before audio)
+  handsFree: boolean // always listening for the wake phrase
+  awaitingAnswer: boolean // a check-in is pending
   onCommand: (text: string) => void
 }
 
@@ -59,7 +59,7 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
     const r: Recognition = new RecognitionCtor()
     r.lang = BCP47[lang]
     r.continuous = true
-    r.interimResults = true   // show words as they are heard; we only ACT on final results
+    r.interimResults = true // show words as they are heard; we only ACT on final results
     r.onstart = () => {
       setListening(true)
       setError(null)
@@ -70,19 +70,24 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
     }
     r.onerror = (e: { error: string }) => {
       setListening(false)
-      if (e.error === 'no-speech' || e.error === 'aborted') return   // normal: silence / we stopped it
+      if (e.error === 'no-speech' || e.error === 'aborted') return // normal: silence / we stopped it
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        want.current.continuous = false   // don't retry in a loop
+        want.current.continuous = false // don't retry in a loop
         setError('Microphone blocked — click the 🔒/camera icon in the address bar and allow the microphone.')
       } else if (e.error === 'network') {
-        setError('Speech recognition needs an internet connection (the browser sends audio to its speech service).')
+        setError(
+          'Speech recognition needs an internet connection (the browser sends audio to its speech service).',
+        )
       } else if (e.error === 'audio-capture') {
         setError('No microphone found.')
       } else {
         setError(`Speech recognition error: ${e.error}`)
       }
     }
-    r.onresult = (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>; resultIndex: number }) => {
+    r.onresult = (e: {
+      results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>
+      resultIndex: number
+    }) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (!e.results[i].isFinal) {
           setHeard(e.results[i][0].transcript.trim() + '…')
@@ -99,7 +104,7 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
           if (!w.continuous) r.stop()
         } else if (wake.woke) {
           if (wake.command) opts.current.onCommand(wake.command)
-          else w.armedUntil = Date.now() + 8000   // "Hey Kawan" … (pause) … "what is metformin?"
+          else w.armedUntil = Date.now() + 8000 // "Hey Kawan" … (pause) … "what is metformin?"
         } else if (Date.now() < w.armedUntil) {
           w.armedUntil = 0
           opts.current.onCommand(said)
@@ -137,7 +142,7 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
       u.onstart = () => {
         speakingRef.current = true
         setSpeaking(true)
-        rec.current?.stop()   // don't transcribe ourselves
+        rec.current?.stop() // don't transcribe ourselves
       }
       const done = () => {
         speakingRef.current = false

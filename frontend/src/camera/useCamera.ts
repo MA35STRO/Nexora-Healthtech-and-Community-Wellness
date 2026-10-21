@@ -4,11 +4,12 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { wsUrl } from '../api'
-import { motionScore, pack, SKELETON, shouldProcess, VISIBLE, type Packed } from './geometry'
+import { motionScore, pack, SKELETON, shouldProcess, VISIBLE, type Packed } from './poseMath'
 
 const FPS = 15
 const LOCAL_MODEL = '/mediapipe/pose_landmarker_lite.task'
-const CDN_MODEL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
+const CDN_MODEL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
 
 export type CamStatus = 'starting' | 'loading-model' | 'live' | 'denied' | 'no-camera' | 'error'
 
@@ -28,7 +29,11 @@ async function createLandmarker(): Promise<PoseLandmarker> {
       runningMode: 'VIDEO',
       numPoses: 1,
     })
-  for (const [path, delegate] of [[LOCAL_MODEL, 'GPU'], [LOCAL_MODEL, 'CPU'], [CDN_MODEL, 'CPU']] as const) {
+  for (const [path, delegate] of [
+    [LOCAL_MODEL, 'GPU'],
+    [LOCAL_MODEL, 'CPU'],
+    [CDN_MODEL, 'CPU'],
+  ] as const) {
     try {
       return await attempt(path, delegate)
     } catch (e) {
@@ -80,7 +85,9 @@ export function useCamera(privacy: boolean) {
       } catch (e) {
         const name = (e as DOMException).name
         setStatus(name === 'NotAllowedError' ? 'denied' : 'no-camera')
-        setError(name === 'NotAllowedError' ? 'Camera permission was denied.' : 'No camera found on this device.')
+        setError(
+          name === 'NotAllowedError' ? 'Camera permission was denied.' : 'No camera found on this device.',
+        )
         return
       }
       if (stopped) return stream.getTracks().forEach((t) => t.stop())
@@ -153,7 +160,12 @@ export function useCamera(privacy: boolean) {
   return { videoRef, canvasRef, status, error, server, fps, captureFrame }
 }
 
-function draw(canvas: HTMLCanvasElement | null, video: HTMLVideoElement, pts: Packed | null, privacy: boolean) {
+function draw(
+  canvas: HTMLCanvasElement | null,
+  video: HTMLVideoElement,
+  pts: Packed | null,
+  privacy: boolean,
+) {
   if (!canvas) return
   const w = video.videoWidth || 640
   const h = video.videoHeight || 480

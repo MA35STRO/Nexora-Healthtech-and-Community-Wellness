@@ -6,18 +6,20 @@ A single horizontal pose is NOT a fall (people lie on sofas). We require a seque
   3. They stay down for still_s seconds
 Only then do we emit "possible_fall" — with human-readable reasons.
 """
+
 from collections import deque
 from typing import Optional
 
-from .config import Settings, settings as default_settings
-from .models import Observation, Detection
+from .config import Settings
+from .config import settings as default_settings
+from .data_types import Detection, Observation
 
 
 class FallDetector:
     def __init__(self, cfg: Settings = default_settings):
         self.cfg = cfg
         self.history: deque[Observation] = deque()
-        self.candidate: Optional[dict] = None   # set when a rapid drop is seen
+        self.candidate: Optional[dict] = None  # set when a rapid drop is seen
         self.cooldown_until = 0.0
 
     def reset(self):
@@ -27,7 +29,7 @@ class FallDetector:
 
     @staticmethod
     def usable(o: Observation) -> bool:
-        return o.person and o.full_body   # never reason on landmarks the model had to guess
+        return o.person and o.full_body  # never reason on landmarks the model had to guess
 
     def update(self, obs: Observation) -> Optional[Detection]:
         self._remember(obs)
@@ -67,10 +69,17 @@ class FallDetector:
             c["lost"] = True
 
         # "Got up" = upright again AND hips rose well above their lowest point
-        got_up = (self.usable(obs) and obs.torso_angle <= self.cfg.upright_angle
-                  and obs.hip_y < c["low_hip"] - self.cfg.min_drop / 2) if "low_hip" in c else False
+        got_up = (
+            (
+                self.usable(obs)
+                and obs.torso_angle <= self.cfg.upright_angle
+                and obs.hip_y < c["low_hip"] - self.cfg.min_drop / 2
+            )
+            if "low_hip" in c
+            else False
+        )
         if got_up:
-            self.candidate = None   # they recovered on their own — no alert
+            self.candidate = None  # they recovered on their own — no alert
             return None
 
         if obs.t - c["t"] < self.cfg.still_s:
@@ -79,21 +88,25 @@ class FallDetector:
         horizontal = c.get("max_angle", 0) >= self.cfg.horizontal_angle
         lost = c.get("lost", False) and not self.usable(obs)
         if not (horizontal or lost):
-            self.candidate = None   # dropped but ended e.g. sitting/crouching: not flagged
+            self.candidate = None  # dropped but ended e.g. sitting/crouching: not flagged
             return None
 
-        reasons = [f"Hip position dropped {c['drop'] * 100:.0f}% of frame height in {c['duration']:.1f}s "
-                   f"from an upright posture"]
+        reasons = [
+            f"Hip position dropped {c['drop'] * 100:.0f}% of frame height in {c['duration']:.1f}s "
+            f"from an upright posture"
+        ]
         if horizontal:
             reasons.append(f"Torso became near-horizontal ({c['max_angle']:.0f}° from vertical)")
         if lost:
             reasons.append("Person left the camera view (or became only partly visible) right after the drop")
         reasons.append(f"No recovery to standing within {self.cfg.still_s:.0f}s")
-        uncertainty = ("Camera-based estimate only. Could also be lying down quickly, "
-                       "bending out of view, or tracking error. User check-in required.")
+        uncertainty = (
+            "Camera-based estimate only. Could also be lying down quickly, "
+            "bending out of view, or tracking error. User check-in required."
+        )
 
         self.candidate = None
-        self.cooldown_until = obs.t + 10   # avoid duplicate detections for the same fall
+        self.cooldown_until = obs.t + 10  # avoid duplicate detections for the same fall
         return Detection("possible_fall", obs.t, reasons, uncertainty, obs.source)
 
     def _remember(self, obs: Observation):

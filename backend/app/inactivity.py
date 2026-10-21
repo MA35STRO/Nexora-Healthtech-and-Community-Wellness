@@ -5,14 +5,16 @@ Inactivity = the person is IN VIEW but has not moved for longer than
 and only during waking hours, so normal sleep is never flagged. Out of view = can't judge = no alert.
 It also keeps per-hour presence/activity minutes for the caregiver heatmap.
 """
+
 import datetime as dt
 from typing import Optional
 
-from .config import Settings, settings as default_settings
-from .models import Detection, Observation
-from .store import Store
+from .config import Settings
+from .config import settings as default_settings
+from .data_types import Detection, Observation
+from .database import Database
 
-BASELINE_KEEP = 30   # still-period samples remembered per hour
+BASELINE_KEEP = 30  # still-period samples remembered per hour
 
 
 def _p90(xs: list[float]) -> float:
@@ -20,11 +22,11 @@ def _p90(xs: list[float]) -> float:
     return s[min(len(s) - 1, int(0.9 * len(s)))] if s else 0.0
 
 
-class RoutineMonitor:
-    def __init__(self, store: Store, cfg: Settings = default_settings):
+class InactivityMonitor:
+    def __init__(self, store: Database, cfg: Settings = default_settings):
         self.cfg, self.store = cfg, store
         self.baseline: dict[str, list[float]] = store.kv_get("still_baseline", {})
-        self.override_s: Optional[float] = None   # demo: short threshold, ignores waking hours
+        self.override_s: Optional[float] = None  # demo: short threshold, ignores waking hours
         self.last_t: Optional[float] = None
         self.still_since: Optional[float] = None
         self.flagged = False
@@ -61,7 +63,7 @@ class RoutineMonitor:
         if not obs.person or obs.motion is None:
             if self.still_since is not None and not obs.person:
                 self._learn(obs.t, obs.t - self.still_since)
-            self.still_since, self.flagged = None, False   # out of view: we can't judge stillness
+            self.still_since, self.flagged = None, False  # out of view: we can't judge stillness
             return None
 
         if obs.motion >= self.cfg.motion_threshold:
@@ -83,11 +85,16 @@ class RoutineMonitor:
         if typical and self.override_s is None:
             reasons.append(f"Usually still for at most ~{_dur(typical)} at this time of day (learned)")
         reasons.append(f"Threshold for this hour: {_dur(limit)}")
-        return Detection("inactivity", obs.t, reasons,
-                         "Could simply be resting, reading or napping. User check-in required.", obs.source)
+        return Detection(
+            "inactivity",
+            obs.t,
+            reasons,
+            "Could simply be resting, reading or napping. User check-in required.",
+            obs.source,
+        )
 
     def tick(self, now: float):
-        if self.last_t is not None and now - self.last_t > 5:   # no frames (camera off) → can't judge
+        if self.last_t is not None and now - self.last_t > 5:  # no frames (camera off) → can't judge
             self.still_since, self.flagged = None, False
         if now - self._dirty_t > 30:
             self.flush()
@@ -118,9 +125,14 @@ class RoutineMonitor:
         for i in range(days - 1, -1, -1):
             day = (today - dt.timedelta(days=i)).isoformat()
             rec = self.store.kv_get(f"activity:{day}") or {"hours": [{"present": 0, "active": 0}] * 24}
-            out.append({"date": day, "simulated": rec.get("simulated", False),
-                        "active_min": [round(h["active"] / 60, 1) for h in rec["hours"]],
-                        "present_min": [round(h["present"] / 60, 1) for h in rec["hours"]]})
+            out.append(
+                {
+                    "date": day,
+                    "simulated": rec.get("simulated", False),
+                    "active_min": [round(h["active"] / 60, 1) for h in rec["hours"]],
+                    "present_min": [round(h["present"] / 60, 1) for h in rec["hours"]],
+                }
+            )
         return out
 
 

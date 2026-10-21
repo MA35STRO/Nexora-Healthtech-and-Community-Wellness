@@ -1,9 +1,10 @@
 """All tunable thresholds live here so the safety rules are inspectable in one place."""
+
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent   # backend/
+ROOT = Path(__file__).resolve().parent.parent  # backend/
 
 
 def _load_dotenv():
@@ -32,32 +33,32 @@ def _s(name: str, default: str = "") -> str:
 @dataclass(frozen=True)
 class Settings:
     # --- Fall detector (normalised image coords: y=0 top, y=1 bottom) ---
-    window_s: float = _f("FALL_WINDOW_S", 1.5)            # how far back we look for a rapid drop
-    min_drop: float = _f("FALL_MIN_DROP", 0.20)           # hip must drop this fraction of frame height...
-    upright_angle: float = _f("FALL_UPRIGHT_ANGLE", 35)   # ...from an upright torso (deg from vertical)
+    window_s: float = _f("FALL_WINDOW_S", 1.5)  # how far back we look for a rapid drop
+    min_drop: float = _f("FALL_MIN_DROP", 0.20)  # hip must drop this fraction of frame height...
+    upright_angle: float = _f("FALL_UPRIGHT_ANGLE", 35)  # ...from an upright torso (deg from vertical)
     horizontal_angle: float = _f("FALL_HORIZONTAL_ANGLE", 60)  # ...to a near-horizontal torso
-    still_s: float = _f("FALL_STILL_S", 2.0)              # and stay down this long before we flag it
+    still_s: float = _f("FALL_STILL_S", 2.0)  # and stay down this long before we flag it
 
     # --- Context engine ---
     checkin_timeout_s: float = _f("CHECKIN_TIMEOUT_S", 20)  # no reply within this → escalate
 
     # --- Routine / inactivity ---
-    motion_threshold: float = _f("MOTION_THRESHOLD", 0.006)   # mean landmark movement per frame = "moving"
-    inactivity_min_s: float = _f("INACTIVITY_MIN_S", 600)     # never flag stillness shorter than this
-    inactivity_max_s: float = _f("INACTIVITY_MAX_S", 3600)    # learned threshold is capped here
-    inactivity_k: float = _f("INACTIVITY_K", 1.5)             # × typical still period for this hour
+    motion_threshold: float = _f("MOTION_THRESHOLD", 0.006)  # mean landmark movement per frame = "moving"
+    inactivity_min_s: float = _f("INACTIVITY_MIN_S", 600)  # never flag stillness shorter than this
+    inactivity_max_s: float = _f("INACTIVITY_MAX_S", 3600)  # learned threshold is capped here
+    inactivity_k: float = _f("INACTIVITY_K", 1.5)  # × typical still period for this hour
     waking_start_h: float = _f("WAKING_START_H", 7)
     waking_end_h: float = _f("WAKING_END_H", 22)
 
     # --- Medication ---
     med_remind_again_s: float = _f("MED_REMIND_AGAIN_S", 600)  # repeat a reminder after 10 min
-    med_grace_s: float = _f("MED_GRACE_S", 3600)               # dose counted as missed after 1 h
+    med_grace_s: float = _f("MED_GRACE_S", 3600)  # dose counted as missed after 1 h
     med_snooze_s: float = _f("MED_SNOOZE_S", 600)
 
     # --- Vitals (simulated unless a device posts to /api/vitals) ---
-    vitals_sim: bool = _s("VITALS_SIM", "0") == "1"   # off: only real readings (demos switch it on briefly)
+    vitals_sim: bool = _s("VITALS_SIM", "0") == "1"  # off: only real readings (demos switch it on briefly)
     vitals_interval_s: float = _f("VITALS_INTERVAL_S", 2)
-    vitals_sustain_s: float = _f("VITALS_SUSTAIN_S", 20)       # abnormal must persist this long
+    vitals_sustain_s: float = _f("VITALS_SUSTAIN_S", 20)  # abnormal must persist this long
     spo2_low: float = _f("SPO2_LOW", 92)
     hr_high: float = _f("HR_HIGH", 120)
     hr_low: float = _f("HR_LOW", 45)
@@ -77,13 +78,10 @@ class Settings:
     # --- Profile ---
     user_name: str = _s("USER_NAME")
     caregiver_name: str = _s("CAREGIVER_NAME")
-    seed_history: bool = _s("SEED_DEMO_HISTORY", "0") == "1"   # off: no invented history
+    seed_history: bool = _s("SEED_DEMO_HISTORY", "0") == "1"  # off: no invented history
 
     # --- Infra ---
     db_path: str = _s("KAWAN_DB", str(ROOT / "kawan.db"))
-    camera_mode: str = _s("CAMERA_MODE", "browser")   # browser (default) | server (OpenCV on this machine)
-    camera_index: int = int(_f("CAMERA_INDEX", 0))
-    model_path: str = _s("POSE_MODEL", str(ROOT / "models" / "pose_landmarker_lite.task"))
 
 
 settings = Settings()

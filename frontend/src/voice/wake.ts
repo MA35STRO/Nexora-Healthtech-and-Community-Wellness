@@ -2,7 +2,20 @@
 // "Kawan" is not an English word, so recognisers transcribe it many ways ("Cowan", "Karwan", "Kevin",
 // "car one"...). We compare a rough sound-key of the first word(s) with "kawan" instead of exact spellings.
 
-const GREETINGS = new Set(['hey', 'hei', 'hai', 'hi', 'hay', 'ok', 'okay', 'hello', 'helo', 'hallo', 'a', 'eh'])
+const GREETINGS = new Set([
+  'hey',
+  'hei',
+  'hai',
+  'hi',
+  'hay',
+  'ok',
+  'okay',
+  'hello',
+  'helo',
+  'hallo',
+  'a',
+  'eh',
+])
 const TARGET = soundKey('kawan')
 
 export interface WakeMatch {
@@ -43,7 +56,14 @@ export function matchWake(transcript: string): WakeMatch {
     const dist = distance(key, TARGET)
     // exact sound-match is enough on its own; a near-match needs "hey/hi/ok" in front
     if (dist === 0 || (greeted && dist <= (key.length >= 4 ? 2 : 1))) {
-      return { woke: true, command: words.slice(i + n).join(' ').replace(/^[\s,.!?]+/, '').trim() }
+      return {
+        woke: true,
+        command: words
+          .slice(i + n)
+          .join(' ')
+          .replace(/^[\s,.!?]+/, '')
+          .trim(),
+      }
     }
   }
   return { woke: false, command: '' }

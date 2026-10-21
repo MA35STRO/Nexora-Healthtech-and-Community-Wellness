@@ -1,11 +1,12 @@
-"""Tests for the safety-critical logic: detector, reply classifier, context engine."""
+"""Tests for the safety-critical logic: fall detector, reply classifier, safety engine."""
+
 import pytest
 
-from app.assistant import classify, detect_lang
 from app.config import Settings
-from app.detector import FallDetector
-from app.engine import ContextEngine
-from app.models import Detection, Observation
+from app.conversation import classify, detect_lang
+from app.data_types import Detection, Observation
+from app.fall_detector import FallDetector
+from app.safety_engine import SafetyEngine
 
 CFG = Settings(checkin_timeout_s=20)
 
@@ -55,8 +56,9 @@ def test_slowly_lying_down_not_flagged():
 
 def test_sitting_down_quickly_not_flagged():
     d = FallDetector(CFG)
-    sit = [(3 + i / 10, True, 10, 0.45 + i * 0.05) for i in range(5)] + \
-          [(3.5 + i / 10, True, 12, 0.70) for i in range(40)]
+    sit = [(3 + i / 10, True, 10, 0.45 + i * 0.05) for i in range(5)] + [
+        (3.5 + i / 10, True, 12, 0.70) for i in range(40)
+    ]
     assert feed(d, standing(0, 3) + sit) == []
 
 
@@ -76,12 +78,25 @@ def test_drop_then_out_of_view_flagged_with_reason():
 
 
 # ---------- reply classifier ----------
-@pytest.mark.parametrize("text,intent", [
-    ("I'm okay", "ok"), ("im fine thanks", "ok"), ("Saya okay", "ok"), ("tak apa, saya baik", "ok"),
-    ("help", "help"), ("Tolong!", "help"), ("I'm not okay", "help"), ("saya tak ok", "help"),
-    ("I can't get up", "help"), ("kaki saya sakit", "help"), ("okay but my leg hurts", "help"),
-    ("good morning", "unclear"), ("what?", "unclear"), ("", "unclear"),
-])
+@pytest.mark.parametrize(
+    "text,intent",
+    [
+        ("I'm okay", "ok"),
+        ("im fine thanks", "ok"),
+        ("Saya okay", "ok"),
+        ("tak apa, saya baik", "ok"),
+        ("help", "help"),
+        ("Tolong!", "help"),
+        ("I'm not okay", "help"),
+        ("saya tak ok", "help"),
+        ("I can't get up", "help"),
+        ("kaki saya sakit", "help"),
+        ("okay but my leg hurts", "help"),
+        ("good morning", "unclear"),
+        ("what?", "unclear"),
+        ("", "unclear"),
+    ],
+)
 def test_classify(text, intent):
     assert classify(text) == intent
 
@@ -97,7 +112,7 @@ def det(t=100.0):
 
 
 def test_fall_starts_checkin():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     ev = e.on_detection(det(), 100)
     assert e.state == "check_in"
     assert [x.kind for x in ev] == ["possible_fall", "checkin_sent"]
@@ -105,17 +120,17 @@ def test_fall_starts_checkin():
 
 
 def test_user_ok_lowers_severity_without_escalation():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     reply, _ = e.on_user_message("I'm okay", 105)
     assert e.state == "attention"
     assert e.active.severity == "low" and not e.active.escalated
-    assert e.tick(200) == []   # timeout no longer applies
+    assert e.tick(200) == []  # timeout no longer applies
     assert "caregiver" in reply.lower()
 
 
 def test_no_response_escalates_after_timeout():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     assert e.tick(119) == []
     ev = e.tick(120)
@@ -125,15 +140,15 @@ def test_no_response_escalates_after_timeout():
 
 
 def test_help_escalates_immediately_malay():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     reply, _ = e.on_user_message("Tolong, saya tak boleh bangun", 103)
     assert e.state == "escalated" and e.active.user_response == "help"
-    assert "penjaga" in reply   # replied in Malay
+    assert "penjaga" in reply  # replied in Malay
 
 
 def test_unclear_reply_keeps_timer_running():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     e.on_user_message("good morning", 105)
     assert e.state == "check_in"
@@ -142,20 +157,20 @@ def test_unclear_reply_keeps_timer_running():
 
 
 def test_help_without_incident_creates_critical_alert():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_user_message("help me please", 50)
     assert e.state == "escalated" and e.active.kind == "help_request"
 
 
 def test_duplicate_detection_merges():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     e.on_detection(det(), 104)
     assert len(e.incidents) == 1
 
 
 def test_acknowledge_then_resolve_returns_to_monitoring():
-    e = ContextEngine(CFG)
+    e = SafetyEngine(CFG)
     e.on_detection(det(), 100)
     e.tick(130)
     iid = e.active.id
@@ -168,6 +183,16 @@ def test_acknowledge_then_resolve_returns_to_monitoring():
 def test_guessed_landmarks_never_trigger():
     """Upper-body-only view: MediaPipe's guessed hips may jump around — must be ignored."""
     d = FallDetector(CFG)
-    frames = [Observation(i / 10, True, 5 if i < 30 else 85, 0.45 if i < 30 else 0.9,
-                          "upper body only", "demo", full_body=False) for i in range(80)]
+    frames = [
+        Observation(
+            i / 10,
+            True,
+            5 if i < 30 else 85,
+            0.45 if i < 30 else 0.9,
+            "upper body only",
+            "demo",
+            full_body=False,
+        )
+        for i in range(80)
+    ]
     assert [x for f in frames if (x := d.update(f))] == []

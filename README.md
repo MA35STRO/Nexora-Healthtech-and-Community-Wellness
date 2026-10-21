@@ -22,6 +22,8 @@ It checks in with you before raising any alarm. If you need help, or don't answe
 
 ---
 
+> 📖 **Judges / reviewers:** [How to use the app](#quick-start) · [How the code works (CODE_GUIDE)](docs/CODE_GUIDE.md) · [Tests](#testing)
+
 ## Why
 
 - Nearly **1 in 5 Malaysian adults has diabetes**, and hypertension and heart disease keep rising.
@@ -75,7 +77,7 @@ flowchart LR
     OBS --> RM[RoutineMonitor<br/>learned inactivity]
     VS[Vitals sim / devices] --> VM[VitalsMonitor]
     MS[MedScheduler] --> CE
-    FD --> CE[ContextEngine<br/>check-in → escalate]
+    FD --> CE[SafetyEngine<br/>check-in → escalate]
     RM --> CE
     VM --> CE
     CHAT[Chat router] -->|safety first| CE
@@ -178,23 +180,38 @@ GitHub Actions runs all three on every push.
 
 ## Project structure
 
+**Want to read the code? Start with [docs/CODE_GUIDE.md](docs/CODE_GUIDE.md).** It explains every file in plain English and follows a fall, a question and a medicine reminder step by step through the code.
+
 ```
-backend/app/
-  perception.py  browser landmarks → pose features (+ optional server OpenCV camera)
-  detector.py    temporal fall detector with reasons
-  routine.py     learned inactivity baseline + activity heatmap
-  vitals.py      vitals simulator + sustained-threshold rules
-  meds.py        medication scheduler + adherence
-  wellness.py    red-flag screening + triage (EN/BM)
-  engine.py      context engine state machine (rules R1–R10)
-  assistant.py   check-in wording, reply classifier, chat router
-  llm.py         Claude (optional) · knowledge.py + data/knowledge.json offline KB
-  hub.py         wires everything, thread-safe · main.py  REST + WebSockets + serves UI
-frontend/src/
-  perception/    useCamera (MediaPipe in browser) · geometry helpers
-  voice/         speech synthesis + recognition + wake phrase
-  pages/         Companion · Caregiver · Report
-  components/    Mascot (Kawan) · Charts · WellnessModal
+kawan/
+├── backend/                  Python server ("the hub")
+│   ├── app/
+│   │   ├── main.py            web server: all URLs and live connections
+│   │   ├── hub.py             coordinator: every input goes through here
+│   │   ├── config.py          every adjustable threshold, in one place
+│   │   ├── pose.py            33 body points → angle, hip height, posture
+│   │   ├── fall_detector.py   "was that a fall?" (with reasons)
+│   │   ├── inactivity.py      "still for unusually long?" (learns what's normal)
+│   │   ├── vitals.py          heart rate / oxygen / BP / temperature rules
+│   │   ├── medications.py     medicine schedule, reminders, adherence
+│   │   ├── daily_checkin.py   daily check-in + emergency warning signs (EN/BM)
+│   │   ├── safety_engine.py   ask "are you okay?" → escalate (rules R1–R10)
+│   │   ├── conversation.py    Kawan's wording + understanding replies
+│   │   ├── ai_answers.py      health answers (Claude or offline), always cited
+│   │   ├── health_library.py  search over data/health_library.json (71 sourced topics)
+│   │   ├── database.py        SQLite storage (never video)
+│   │   ├── telegram_alerts.py optional phone alerts
+│   │   └── demo_*.py          demo buttons (run through the real detectors)
+│   └── tests/                 104 automated tests
+├── frontend/                 Website (TypeScript + React)
+│   ├── src/pages/             Companion · Caregiver · Report · How to use
+│   ├── src/camera/            webcam + MediaPipe in the browser
+│   ├── src/voice/             speaking, listening, "Hey Kawan"
+│   ├── src/components/        Kawan mascot, charts, forms
+│   └── e2e/                   browser tests with a fake webcam
+├── docs/                     code guide + screenshots
+├── start.ps1 / start.sh      one-command start
+└── tunnel.ps1                share on phones (https link)
 ```
 
 ## Honest limitations

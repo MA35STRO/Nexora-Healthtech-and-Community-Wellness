@@ -22,18 +22,33 @@ export function VitalsEntry({ lang, onDone }: { lang: Lang; onDone?: () => void 
       if (!raw) continue
       const n = Number(raw)
       if (!Number.isFinite(n) || n < f.min || n > f.max) {
-        setMsg(lang === 'ms' ? `${f.ms}: nilai mesti antara ${f.min} dan ${f.max}` : `${f.en}: must be between ${f.min} and ${f.max}`)
+        setMsg(
+          lang === 'ms'
+            ? `${f.ms}: nilai mesti antara ${f.min} dan ${f.max}`
+            : `${f.en}: must be between ${f.min} and ${f.max}`,
+        )
         return
       }
       body[f.k] = n
     }
-    if (!Object.keys(body).length) return setMsg(lang === 'ms' ? 'Masukkan sekurang-kurangnya satu bacaan.' : 'Enter at least one reading.')
-    if ((body.sys == null) !== (body.dia == null)) return setMsg(lang === 'ms' ? 'Masukkan kedua-dua nombor BP.' : 'Enter both blood pressure numbers.')
+    if (!Object.keys(body).length)
+      return setMsg(
+        lang === 'ms' ? 'Masukkan sekurang-kurangnya satu bacaan.' : 'Enter at least one reading.',
+      )
+    if ((body.sys == null) !== (body.dia == null))
+      return setMsg(lang === 'ms' ? 'Masukkan kedua-dua nombor BP.' : 'Enter both blood pressure numbers.')
     try {
       const r = await api.vitals({ ...body, source: 'manual' })
       setV({})
-      setMsg(r.alert ? (lang === 'ms' ? 'Disimpan. Bacaan ini luar biasa — Kawan akan bertanya khabar.' : 'Saved. This reading is unusual — Kawan will check on you.')
-        : (lang === 'ms' ? 'Bacaan disimpan.' : 'Reading saved.'))
+      setMsg(
+        r.alert
+          ? lang === 'ms'
+            ? 'Disimpan. Bacaan ini luar biasa — Kawan akan bertanya khabar.'
+            : 'Saved. This reading is unusual — Kawan will check on you.'
+          : lang === 'ms'
+            ? 'Bacaan disimpan.'
+            : 'Reading saved.',
+      )
       onDone?.()
     } catch {
       setMsg(lang === 'ms' ? 'Tidak dapat menyimpan.' : 'Could not save the reading.')
@@ -41,13 +56,24 @@ export function VitalsEntry({ lang, onDone }: { lang: Lang; onDone?: () => void 
   }
 
   return (
-    <form className="vitals-entry" onSubmit={(e) => { e.preventDefault(); save() }}>
+    <form
+      className="vitals-entry"
+      onSubmit={(e) => {
+        e.preventDefault()
+        save()
+      }}
+    >
       <div className="vitals-entry-grid">
         {FIELDS.map((f) => (
           <label key={f.k} className="small">
             <span className="muted">{f[lang]}</span>
-            <input inputMode="decimal" value={v[f.k] ?? ''} onChange={(e) => setV({ ...v, [f.k]: e.target.value })}
-              aria-label={f.en} placeholder="–" />
+            <input
+              inputMode="decimal"
+              value={v[f.k] ?? ''}
+              onChange={(e) => setV({ ...v, [f.k]: e.target.value })}
+              aria-label={f.en}
+              placeholder="–"
+            />
           </label>
         ))}
       </div>

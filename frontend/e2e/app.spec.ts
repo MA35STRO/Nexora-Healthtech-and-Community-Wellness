@@ -9,11 +9,18 @@ test('camera starts automatically and streams pose landmarks to the hub', async 
   await page.goto('/')
   await expect(page.getByTestId('cam-status')).toHaveText(/LIVE/, { timeout: 45_000 })
   // the hub sees browser frames (the fake camera shows no person, so "not in view" is expected)
-  await expect.poll(async () => (await (await request.get('/api/state')).json()).camera.browser_fps, { timeout: 10_000 }).toBeGreaterThan(0)
+  await expect
+    .poll(async () => (await (await request.get('/api/state')).json()).camera.browser_fps, {
+      timeout: 10_000,
+    })
+    .toBeGreaterThan(0)
   await expect(page.locator('.cam-overlay')).toContainText(/no person in view|standing|sitting|lying|upright/)
 })
 
-test('fall demo → check-in on companion → escalation card on caregiver → resolve', async ({ page, context }) => {
+test('fall demo → check-in on companion → escalation card on caregiver → resolve', async ({
+  page,
+  context,
+}) => {
   await page.goto('/')
   const caregiver = await context.newPage()
   await caregiver.goto('/caregiver')
@@ -47,7 +54,7 @@ test('user says they are okay → attention, not an emergency', async ({ page, r
 
 test('medicine reminder can be confirmed', async ({ page, request }) => {
   await page.goto('/')
-  await request.post('/api/demo/med_missed')   // creates a dose due now
+  await request.post('/api/demo/med_missed') // creates a dose due now
   await expect(page.locator('.dose').filter({ hasText: 'Due now' }).first()).toBeVisible({ timeout: 10_000 })
   await page.getByRole('button', { name: 'I took my medicine' }).click()
   await expect(page.locator('.msg.assistant').last()).toContainText(/recorded/i)
@@ -115,7 +122,9 @@ test('health answers show their source', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Message Kawan').fill('What is gliclazide?')
   await page.getByLabel('Message Kawan').press('Enter')
-  await expect(page.locator('.msg.assistant').last().locator('.refs')).toContainText('NHS', { timeout: 15_000 })
+  await expect(page.locator('.msg.assistant').last().locator('.refs')).toContainText('NHS', {
+    timeout: 15_000,
+  })
 })
 
 test('how-to-use guide is reachable and bilingual', async ({ page }) => {

@@ -90,9 +90,15 @@ export interface Snapshot {
   pending_prompt: string | null
   checkin_deadline: number | null
   lang: 'en' | 'ms'
-  camera: { mode: string; running: boolean; error: string | null; fps: number; browser_connected: boolean; browser_fps: number }
+  camera: { browser_connected: boolean; browser_fps: number }
   demo: { running: string | null; scenarios: Record<string, string> }
-  live: { person: boolean; posture: string; torso_angle: number; source: string; motion: number | null } | null
+  live: {
+    person: boolean
+    posture: string
+    torso_angle: number
+    source: string
+    motion: number | null
+  } | null
   routine: { still_s: number; threshold_s: number }
   meds: { today: DoseView[]; next: DoseView | null; schedule: Med[] }
   vitals: { latest: Vitals | null; history: Vitals[]; simulated: boolean; mode: string }
@@ -105,9 +111,23 @@ export interface Snapshot {
 export interface Insights {
   generated_t: number
   profile: Profile
-  adherence: { days: { date: string; taken: number; missed: number; simulated: boolean }[]; taken: number; missed: number; percent: number | null }
+  adherence: {
+    days: { date: string; taken: number; missed: number; simulated: boolean }[]
+    taken: number
+    missed: number
+    percent: number | null
+  }
   activity: { date: string; simulated: boolean; active_min: number[]; present_min: number[] }[]
-  wellness: { t: number; mood: number | null; pain: number | null; sleep_h: number | null; symptoms: string[]; note: string; level: string; simulated: boolean }[]
+  wellness: {
+    t: number
+    mood: number | null
+    pain: number | null
+    sleep_h: number | null
+    symptoms: string[]
+    note: string
+    level: string
+    simulated: boolean
+  }[]
   vitals: (Vitals & { simulated: boolean })[]
   incidents: Incident[]
   incident_counts: Record<string, number>
@@ -152,11 +172,26 @@ export const api = {
   addMed: (m: Omit<Med, 'id'>) => req('POST', '/api/meds', m),
   removeMed: (id: string) => req('DELETE', `/api/meds/${id}`),
   wellnessOptions: () =>
-    req<{ symptoms: { id: string; en: string; ms: string; red_flag: boolean }[]; hotlines: Record<string, string> }>('GET', '/api/wellness/options'),
-  wellness: (body: { mood: number | null; pain: number | null; sleep_h: number | null; symptoms: string[]; note: string; lang: string }) =>
-    req<Triage>('POST', '/api/wellness', body),
+    req<{
+      symptoms: { id: string; en: string; ms: string; red_flag: boolean }[]
+      hotlines: Record<string, string>
+    }>('GET', '/api/wellness/options'),
+  wellness: (body: {
+    mood: number | null
+    pain: number | null
+    sleep_h: number | null
+    symptoms: string[]
+    note: string
+    lang: string
+  }) => req<Triage>('POST', '/api/wellness', body),
   pillCheck: (image: string) =>
-    req<{ medicine: string | null; matches: string | null; confidence: string; note: string; source: string }>('POST', '/api/pillcheck', { image }),
+    req<{
+      medicine: string | null
+      matches: string | null
+      confidence: string
+      note: string
+      source: string
+    }>('POST', '/api/pillcheck', { image }),
   vitals: (v: Partial<Vitals>) => req<{ ok: boolean; alert: boolean }>('POST', '/api/vitals', v),
   profile: () => req<Profile>('GET', '/api/profile'),
   saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),
@@ -208,7 +243,12 @@ export function fmtTime(t: number): string {
 }
 
 export function fmtDateTime(t: number): string {
-  return new Date(t * 1000).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return new Date(t * 1000).toLocaleString([], {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export function ago(t: number, now: number): string {

@@ -11,7 +11,10 @@ const S = {
   tookMed: { en: 'I took my medicine', ms: 'Saya sudah makan ubat' },
   talk: { en: 'Talk', ms: 'Cakap' },
   listening: { en: 'Listening…', ms: 'Mendengar…' },
-  typeHere: { en: 'Ask me anything, e.g. "What is metformin for?"', ms: 'Tanya apa sahaja, cth. "Apa itu darah tinggi?"' },
+  typeHere: {
+    en: 'Ask me anything, e.g. "What is metformin for?"',
+    ms: 'Tanya apa sahaja, cth. "Apa itu darah tinggi?"',
+  },
   send: { en: 'Send', ms: 'Hantar' },
   medsToday: { en: 'Today’s medicines', ms: 'Ubat hari ini' },
   checkMed: { en: 'Check my medicine', ms: 'Semak ubat saya' },
