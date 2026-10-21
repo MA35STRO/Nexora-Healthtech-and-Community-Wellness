@@ -115,6 +115,21 @@ def profile_set(body: ProfileIn):
     return hub.set_profile(body.model_dump(exclude_none=True))
 
 
+class AIKeyIn(BaseModel):
+    api_key: str = Field(min_length=1, max_length=300)
+
+
+@app.post("/api/ai")
+def ai_connect(body: AIKeyIn):
+    """Connect Claude with an API key. The key is tested first, saved only on this computer, never sent back."""
+    return hub.connect_ai(body.api_key)
+
+
+@app.delete("/api/ai")
+def ai_disconnect():
+    return hub.disconnect_ai()
+
+
 @app.get("/api/state")
 def state():
     return hub.snapshot()

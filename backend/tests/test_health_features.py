@@ -460,3 +460,38 @@ def test_demo_vitals_only_simulate_during_the_demo():
     assert hub.sim_active
     hub.stop_demo()
     assert not hub.sim_active
+
+
+# ---------- smarter offline library ----------
+def test_library_is_large_and_handles_typos_and_vague_questions():
+    from app.ai_answers import offline_answer
+
+    assert len(health_library.topics()) >= 100
+    assert offline_answer("what is metfromin", "en")["refs"][0]["title"] == "Metformin"  # typo
+    assert offline_answer("is it safe to fast during ramadan", "en")["refs"][0]["title"].startswith("Fasting")
+    assert offline_answer("batuk 2 minggu", "ms")["refs"][0]["title"].startswith("Tuberculosis")
+    unknown = offline_answer("tell me about quantum physics", "en")
+    assert unknown["refs"] == [] and "won't guess" in unknown["reply"] and "internet" not in unknown["reply"]
+
+
+# ---------- connecting Claude from the Settings page ----------
+def test_connect_ai_tests_key_saves_it_privately_and_survives_reset(monkeypatch):
+    from app.ai_answers import AIAnswers
+
+    hub = Hub(CFG, Database(":memory:"))
+    assert not hub.brain.online and hub.ai_key_source() is None
+    assert hub.connect_ai("hello")["ok"] is False  # wrong format, never sent anywhere
+
+    monkeypatch.setattr(AIAnswers, "check", lambda self: (False, "The key was not accepted."))
+    assert hub.connect_ai("sk-ant-" + "x" * 40) == {"ok": False, "message": "The key was not accepted."}
+    assert hub.ai_key_source() is None  # a failing key is not saved
+
+    monkeypatch.setattr(AIAnswers, "check", lambda self: (True, "Connected to Claude."))
+    assert hub.connect_ai("sk-ant-" + "y" * 40)["ok"] is True
+    snap = hub.snapshot()
+    assert snap["ai"]["online"] and snap["ai"]["key_source"] == "app"
+    assert "sk-ant-" not in str(snap)  # the key never leaves the server
+    hub.reset()
+    assert hub.brain.online  # resetting data keeps the AI connection
+    hub.disconnect_ai()
+    assert not hub.brain.online and hub.ai_key_source() is None

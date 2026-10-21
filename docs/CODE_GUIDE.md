@@ -60,7 +60,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 | [`safety_engine.py`](../backend/app/safety_engine.py) | **The heart of the safety logic.** Rules R1–R10: open an alert, ask "are you okay?", lower or escalate it, let the caregiver acknowledge/resolve. |
 | [`conversation.py`](../backend/app/conversation.py) | Kawan's fixed wording (EN/BM), understanding replies like "I'm okay" / "Tolong", and deciding where a chat message should go. |
 | [`ai_answers.py`](../backend/app/ai_answers.py) | Answers health questions: uses Claude (if an API key is set) grounded in the health library, or the library alone offline. Always returns its sources. |
-| [`health_library.py`](../backend/app/health_library.py) + [`data/health_library.json`](../backend/app/data/health_library.json) | 71 reviewed health topics in English and Malay, each with its source (MOH Malaysia guidelines, WHO, NHS…), and the search that finds the right one. |
+| [`health_library.py`](../backend/app/health_library.py) + [`data/health_library.json`](../backend/app/data/health_library.json) | 104 reviewed health topics in English and Malay, each with its source (MOH Malaysia guidelines, WHO, NHS…), and the search that finds the right one. |
 | [`database.py`](../backend/app/database.py) | Saves events, alerts, readings, doses and settings in a small SQLite file. Never stores video. |
 | [`telegram_alerts.py`](../backend/app/telegram_alerts.py) | Optional: sends caregiver alerts to a phone via a Telegram bot. |
 | [`demo_scenarios.py`](../backend/app/demo_scenarios.py) | The demo buttons: scripted body movements and replies that run through the **real** detectors. |
@@ -169,7 +169,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 
 | Suite | Command | What it proves |
 |---|---|---|
-| Backend (104) | `cd backend && .venv/Scripts/python -m pytest -q` | Fall rules, safety engine R1–R10, replies in EN/BM, medicines, inactivity, vitals, triage, AI grounding and citations, no invented data, full API + WebSocket flows |
+| Backend (106) | `cd backend && .venv/Scripts/python -m pytest -q` | Fall rules, safety engine R1–R10, replies in EN/BM, medicines, inactivity, vitals, triage, AI grounding and citations, no invented data, full API + WebSocket flows |
 | Frontend unit (19) | `cd frontend && npm test` | Pose maths, motion score, "Hey Kawan" matching |
 | Browser end-to-end (12) | `cd frontend && npx playwright test` | A real Chromium with a fake webcam: camera auto-start, fall → check-in → alert → resolve, medicines, cited answers, triage, settings, readings, guide, report |
 

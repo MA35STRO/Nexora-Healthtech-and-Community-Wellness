@@ -116,9 +116,11 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
                 di bawah setiap jawapan (contohnya garis panduan KKM, WHO, NHS).
               </li>
               <li>
-                Dengan kunci API Claude, jawapan lebih fleksibel tetapi tetap berpandukan perpustakaan itu.
-                Kawan tidak mereka dos, nombor atau fakta tentang anda, dan akan berkata "saya tidak pasti"
-                jika tidak tahu.
+                Perpustakaan terbina dalam (lebih 100 topik) berfungsi <b>tanpa internet</b>. Untuk soalan
+                yang lebih luas, penjaga boleh menyambung <b>Claude AI</b> di{' '}
+                <Link to="/caregiver#ai">Penjaga → Sambungan AI</Link>. Ia memerlukan kunci API Claude
+                (internet sahaja tidak mencukupi), dan halaman itu menunjukkan langkahnya. Kawan tidak mereka
+                dos, nombor atau fakta tentang anda, dan akan berkata "saya tidak pasti" jika tidak tahu.
               </li>
               <li>Kawan tidak boleh menukar ubat atau dos anda. Tanya doktor atau ahli farmasi.</li>
             </ul>
@@ -287,8 +289,11 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
               example Malaysian MOH guidelines, WHO or NHS).
             </li>
             <li>
-              With a Claude API key, answers are more flexible but still grounded in that library. Kawan won't
-              invent doses, numbers or facts about you, and says "I'm not sure" when it doesn't know.
+              The built-in library (over 100 topics) works <b>without internet</b>. For wider questions, a
+              caregiver can connect <b>Claude AI</b> under{' '}
+              <Link to="/caregiver#ai">Caregiver → AI connection</Link>. It needs a Claude API key (internet
+              alone is not enough), and the page shows the steps. Either way, Kawan won't invent doses,
+              numbers or facts about you, and says "I'm not sure" when it doesn't know.
             </li>
             <li>Kawan can't change your medicines or doses. Ask your doctor or pharmacist.</li>
           </ul>

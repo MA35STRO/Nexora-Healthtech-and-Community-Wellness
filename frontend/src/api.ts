@@ -102,7 +102,7 @@ export interface Snapshot {
   routine: { still_s: number; threshold_s: number }
   meds: { today: DoseView[]; next: DoseView | null; schedule: Med[] }
   vitals: { latest: Vitals | null; history: Vitals[]; simulated: boolean; mode: string }
-  ai: { online: boolean; model: string | null }
+  ai: { online: boolean; model: string | null; key_source: 'env' | 'app' | null; topics: number }
   notify: { telegram: boolean }
   profile: Profile
   config: { checkin_timeout_s: number }
@@ -195,6 +195,8 @@ export const api = {
   vitals: (v: Partial<Vitals>) => req<{ ok: boolean; alert: boolean }>('POST', '/api/vitals', v),
   profile: () => req<Profile>('GET', '/api/profile'),
   saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),
+  connectAI: (api_key: string) => req<{ ok: boolean; message: string }>('POST', '/api/ai', { api_key }),
+  disconnectAI: () => req<{ ok: boolean }>('DELETE', '/api/ai'),
   demo: (name: string) => req('POST', `/api/demo/${name}`),
   demoStop: () => req('POST', '/api/demo/stop'),
   reset: () => req('POST', '/api/reset'),

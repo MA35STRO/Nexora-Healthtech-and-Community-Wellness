@@ -82,6 +82,33 @@ class AIAnswers:
     def online(self) -> bool:
         return self.client is not None
 
+    def check(self) -> tuple[bool, str]:
+        """Tiny test call so the caregiver knows straight away whether the key works."""
+        if self.client is None:
+            return False, "No API key set."
+        try:
+            self.client.messages.create(
+                model=self.cfg.anthropic_model, max_tokens=5, messages=[{"role": "user", "content": "Hi"}]
+            )
+            return True, "Connected to Claude."
+        except Exception as e:  # map the SDK's errors to plain words
+            name = type(e).__name__
+            if "Authentication" in name or "PermissionDenied" in name:
+                return (
+                    False,
+                    "The key was not accepted. Check you copied the whole key (it starts with sk-ant-).",
+                )
+            if "Connection" in name or "Timeout" in name:
+                return False, "Couldn't reach Claude. Check this computer's internet connection."
+            if "RateLimit" in name:
+                return (
+                    False,
+                    "Claude is busy or the account has no credit left. Check Billing in the Anthropic console.",
+                )
+            if "NotFound" in name:
+                return False, f"The model '{self.cfg.anthropic_model}' isn't available on this account."
+            return False, f"Claude returned an error: {name}."
+
     def answer(
         self, text: str, lang: str, context: str, history: list[dict], profile: Optional[dict] = None
     ) -> dict:
@@ -186,8 +213,17 @@ class AIAnswers:
 
 
 def offline_answer(text: str, lang: str) -> dict:
-    hits = [(s, t) for s, t in health_library.search(text, k=3) if s >= 1]
+    hits = [(s, t) for s, t in health_library.search(text, k=3) if s >= health_library.ANSWER_SCORE]
     if not hits:
+        maybe = health_library.suggestions(text)
+        if maybe:  # partly matched: offer choices rather than guess
+            titles = ", ".join(t["title"] for t in maybe)
+            reply = (
+                f"Saya kurang pasti. Adakah anda maksudkan: {titles}? Tanya semula dengan nama topik itu."
+                if lang == "ms"
+                else f"I'm not completely sure what you mean. Did you mean: {titles}? Ask me again with that topic."
+            )
+            return {"reply": reply, "source": "offline", "refs": []}
         return {
             "reply": health_library.FALLBACK["ms" if lang == "ms" else "en"],
             "source": "offline",

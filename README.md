@@ -46,7 +46,7 @@ notice → check in with the person → escalate only when needed → give the c
 | 📷 | **Pill check** *(with API key)* | Hold the box up to the camera. Claude reads the label and matches it to your schedule. A photo is sent only when you tap the button. |
 | ❤️ | **Vitals monitor** | Enter **real** readings from your own BP monitor, oximeter or thermometer, or have a device post to `POST /api/vitals`. Unusual readings trigger a check-in; oxygen and heart-rate alerts need **sustained** readings, so one bad reading isn't enough. |
 | 🩺 | **Daily wellness check-in** | Mood, pain, sleep and symptoms. Gives non-diagnostic triage (*self-care / keep an eye on it / see a doctor today / call 999*). Red-flag symptoms escalate instantly. |
-| 📚 | **Health literacy (EN/BM)** | Ask *"What is metformin for?"* or *"Apa itu darah tinggi?"* Answers come from a **curated, source-cited library of 71 topics** (Malaysian MOH clinical practice guidelines, WHO, NHS and others). **The source is shown under every answer.** With an API key, Claude answers grounded in that library, at low temperature, and must say "I'm not sure" rather than invent doses, numbers or personal details. |
+| 📚 | **Health literacy (EN/BM)** | Ask *"What is metformin for?"* or *"Apa itu darah tinggi?"* Answers come from a **curated, source-cited library of 104 topics** (Malaysian MOH clinical practice guidelines, WHO, NHS and others). **The source is shown under every answer.** With an API key, Claude answers grounded in that library, at low temperature, and must say "I'm not sure" rather than invent doses, numbers or personal details. |
 | 🎙️ | **Voice companion** | Speaks every prompt. Listens with *"Hey Kawan…"*. During a check-in it accepts "I'm okay" or "Tolong" with no wake word. |
 | 👨‍👩‍👧 | **Caregiver dashboard** | Live status, alert card with reasons and uncertainty, Acknowledge/Resolve, timeline, vitals, adherence, activity heatmap, wellness trends, browser notifications and sound. Optional **Telegram** phone alerts. |
 | 🧾 | **Doctor-visit report** | One click to a printable or PDF summary: adherence, vitals ranges, symptoms, alerts, and questions to ask the doctor. |
@@ -172,7 +172,7 @@ Interactive docs are at **http://localhost:8000/docs**.
 ## Testing
 
 ```bash
-cd backend  && .venv/Scripts/python -m pytest -q     # 104 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
+cd backend  && .venv/Scripts/python -m pytest -q     # 106 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
 cd frontend && npm test                               # 19 unit tests: landmark packing, motion score, fuzzy "Hey Kawan" matching
 cd frontend && npx playwright test                    # 12 browser e2e tests with a fake webcam (camera auto-start, fall → escalate → resolve, meds, cited answers, triage, settings, readings, guide, report)
 ```
@@ -198,7 +198,7 @@ kawan/
 │   │   ├── safety_engine.py   ask "are you okay?" → escalate (rules R1–R10)
 │   │   ├── conversation.py    Kawan's wording + understanding replies
 │   │   ├── ai_answers.py      health answers (Claude or offline), always cited
-│   │   ├── health_library.py  search over data/health_library.json (71 sourced topics)
+│   │   ├── health_library.py  search over data/health_library.json (104 sourced topics)
 │   │   ├── database.py        SQLite storage (never video)
 │   │   ├── telegram_alerts.py optional phone alerts
 │   │   └── demo_*.py          demo buttons (run through the real detectors)
@@ -222,9 +222,33 @@ kawan/
 - Vitals are simulated unless a device posts readings. Voice recognition needs Chrome or Edge, and Bahasa Melayu recognition quality varies.
 - This is a hackathon prototype, **not a medical device**, and it does not diagnose. In an emergency, call **999**.
 
+## AI tools disclosure
+
+As required by the competition rules:
+
+- **Development:** this project was designed and built with the help of **Claude Code** (Anthropic's AI coding assistant). It wrote and refactored code, the tests and the documentation under the team's direction. The team reviewed, ran and tested the result.
+- **Inside the app (optional):** if a caregiver connects an API key, Kawan uses **Anthropic Claude** to phrase health explanations. It is grounded in the cited health library below, and it never makes safety decisions.
+- **Health library:** the topic texts were drafted with AI assistance from the public guidance listed below, and each topic names its source. *(Recommended before real use: review by a doctor or pharmacist.)*
+- **Demo video:** recorded automatically with Playwright. The narration voice is AI-generated text-to-speech (Microsoft Edge neural voices).
+
+## References
+
+**Software and models**
+- Google **MediaPipe** Pose Landmarker (on-device pose estimation), Apache 2.0: https://ai.google.dev/edge/mediapipe
+- **FastAPI**, **React**, **Vite**, **Recharts**, **Playwright**, **pytest** (open source)
+- **Anthropic Claude** API (optional): https://docs.anthropic.com
+
+**Health guidance used for the health library and safety thresholds**
+- Ministry of Health Malaysia, Clinical Practice Guidelines: *Management of Type 2 Diabetes Mellitus* (6th ed., 2020); *Management of Hypertension* (5th ed., 2018); *Management of Dengue Infection in Adults* (3rd ed., 2015); *Management of Chronic Kidney Disease* (2nd ed., 2018); *Management of Diabetic Foot* (2nd ed., 2018); Dyslipidaemia, Ischaemic Stroke, Osteoporosis and Obesity CPGs
+- Ministry of Health Malaysia: Malaysian Dietary Guidelines / *Pinggan Sihat Malaysia*; Talian HEAL 15555; mQuit; TB control programme
+- National Pharmaceutical Regulatory Agency (NPRA) Malaysia: product registration (MAL number) and Meditag hologram
+- World Health Organization fact sheets: Falls; Diabetes; Hypertension; Dengue; Depression; Dementia; Tuberculosis; Physical activity guidelines (2020); salt and sugar intake guidelines
+- NHS (UK) Health A–Z and medicines information; American Heart Association; American Diabetes Association; IDF-DAR *Diabetes and Ramadan Practical Guidelines*; Resuscitation Council UK; Global Initiative for Asthma (GINA)
+
+Each answer in the app shows the specific source it came from.
+
 ## Credits
 
-Pose estimation: [MediaPipe](https://developers.google.com/mediapipe) (Apache 2.0). Charts: Recharts. AI: Anthropic Claude (optional).
 Kawan's character and all UI are original. The product concept was inspired by the idea of a friendly healthcare companion and uses no third-party character designs.
 
 MIT License.

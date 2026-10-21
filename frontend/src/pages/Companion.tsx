@@ -305,9 +305,13 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               <h2>Kawan</h2>
               <span
                 className={`chip ${snap?.ai.online ? 'brand' : ''}`}
-                title={snap?.ai.model ?? 'offline knowledge base'}
+                title={
+                  snap?.ai.online
+                    ? `Claude model: ${snap.ai.model}`
+                    : 'Built-in health library with sources. A caregiver can connect Claude AI in Caregiver → Settings.'
+                }
               >
-                {snap?.ai.online ? 'Claude AI' : 'Offline knowledge'}
+                {snap?.ai.online ? 'Claude AI + library' : `Offline library · ${snap?.ai.topics ?? 0} topics`}
               </span>
               <div className="spacer" />
               {canListen && (

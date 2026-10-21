@@ -327,6 +327,10 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
           <ProfileEditor snap={snap} />
         </section>
 
+        <section className="card span-12" id="ai">
+          <AIConnection snap={snap} />
+        </section>
+
         <section className="card span-12 no-print">
           <DemoPanel snap={snap} />
         </section>
@@ -502,6 +506,96 @@ function MedsEditor({ snap }: { snap: Snapshot }) {
   )
 }
 const COLORS = ['#5b8def', '#f2a541', '#47b39d', '#9b6ce8', '#e8655f', '#3aa0b8']
+
+function AIConnection({ snap }: { snap: Snapshot }) {
+  const [key, setKey] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const connect = async () => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      const r = await api.connectAI(key)
+      setMsg({ ok: r.ok, text: r.message })
+      if (r.ok) setKey('')
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach the Kawan hub.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <>
+      <div className="card-head">
+        <h2>AI connection (optional)</h2>
+        <span className={`chip ${snap.ai.online ? 'ok' : ''}`}>
+          {snap.ai.online ? `Connected · ${snap.ai.model}` : `Offline library · ${snap.ai.topics} topics`}
+        </span>
+      </div>
+      <p className="small" style={{ marginTop: 0 }}>
+        Kawan always works offline using its built-in health library ({snap.ai.topics} topics, each with a
+        source). Connecting <b>Claude AI</b> lets Kawan answer a much wider range of questions in natural
+        English or Bahasa Melayu, still grounded in that library and still never deciding emergencies.{' '}
+        <b>Internet alone is not enough</b> — Claude needs an API key.
+      </p>
+      {snap.ai.key_source === 'env' ? (
+        <p className="small muted">
+          Connected using the key in <code>backend/.env</code>. Edit that file to change it.
+        </p>
+      ) : snap.ai.online ? (
+        <div className="row">
+          <span className="small">Your key is saved on this computer only and is never shown again.</span>
+          <button className="btn small" onClick={() => api.disconnectAI()}>
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <>
+          <ol className="small" style={{ margin: '0 0 10px', paddingLeft: 20 }}>
+            <li>
+              Go to{' '}
+              <a href="https://console.anthropic.com" target="_blank" rel="noreferrer">
+                console.anthropic.com
+              </a>{' '}
+              and sign up.
+            </li>
+            <li>
+              Open <b>Billing</b> and add a small amount of credit (each answer costs roughly a few US cents
+              or less).
+            </li>
+            <li>
+              Open <b>API keys</b> → <b>Create key</b>, then copy it (it starts with <code>sk-ant-</code>).
+            </li>
+            <li>Paste it below and press Connect. Kawan tests it before saving it.</li>
+          </ol>
+          <div className="row">
+            <input
+              aria-label="Claude API key"
+              type="password"
+              placeholder="sk-ant-..."
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              style={{ ...inputStyle, minWidth: 260 }}
+              autoComplete="off"
+            />
+            <button className="btn primary" disabled={busy || !key.trim()} onClick={connect}>
+              {busy ? 'Testing…' : 'Connect'}
+            </button>
+          </div>
+          <p className="tiny muted" style={{ marginBottom: 0 }}>
+            The key is stored only in this computer's Kawan database. Don't share the caregiver page publicly
+            while a key is connected.
+          </p>
+        </>
+      )}
+      {msg && (
+        <p className={`chip ${msg.ok ? 'ok' : 'danger'}`} style={{ whiteSpace: 'normal', marginTop: 10 }}>
+          {msg.text}
+        </p>
+      )}
+    </>
+  )
+}
 
 function ProfileEditor({ snap }: { snap: Snapshot }) {
   const [p, setP] = useState(snap.profile)

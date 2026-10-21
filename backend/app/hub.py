@@ -9,12 +9,13 @@ One lock guards everything because camera, demo, tick and HTTP threads all call 
 The LLM call is the only slow step and runs OUTSIDE the lock so monitoring never stalls.
 """
 
+import dataclasses
 import datetime as dt
 import threading
 import time
 from typing import Optional
 
-from . import conversation, daily_checkin, demo_scenarios
+from . import conversation, daily_checkin, demo_scenarios, health_library
 from .ai_answers import AIAnswers
 from .config import Settings
 from .config import settings as default_settings
@@ -44,7 +45,7 @@ class Hub:
     ):
         self.cfg = cfg
         self.store = store or Database(cfg.db_path)
-        self.brain = brain or AIAnswers(cfg)
+        self.brain = brain or self._brain_from_saved_key()
         self.notifier = notifier or Notifier(cfg)
         self.lock = threading.RLock()
         self._demo_stop = threading.Event()
@@ -414,9 +415,46 @@ class Hub:
     def reset(self):
         self.stop_demo()
         with self.lock:
+            saved_key = self.store.kv_get("anthropic_api_key")  # "reset data" keeps the AI connection
             self.store.clear()
+            if saved_key:
+                self.store.kv_set("anthropic_api_key", saved_key)
             self._build()
             self.version += 1
+
+    # ---------- optional Claude connection (key entered in Settings, stored only on this computer) ----------
+    def _brain_from_saved_key(self) -> AIAnswers:
+        key = self.cfg.anthropic_api_key or self.store.kv_get("anthropic_api_key") or ""
+        return AIAnswers(dataclasses.replace(self.cfg, anthropic_api_key=key))
+
+    def ai_key_source(self) -> str | None:
+        if self.cfg.anthropic_api_key:
+            return "env"
+        return "app" if self.store.kv_get("anthropic_api_key") else None
+
+    def connect_ai(self, key: str) -> dict:
+        """Test the key first; only a working key is saved."""
+        key = key.strip()
+        if not key.startswith("sk-ant-") or len(key) < 30:
+            return {
+                "ok": False,
+                "message": "That doesn't look like a Claude API key (it starts with sk-ant-).",
+            }
+        candidate = AIAnswers(dataclasses.replace(self.cfg, anthropic_api_key=key))
+        ok, message = candidate.check()  # network call: outside the lock
+        if ok:
+            with self.lock:
+                self.store.kv_set("anthropic_api_key", key)
+                self.brain = candidate
+                self.version += 1
+        return {"ok": ok, "message": message}
+
+    def disconnect_ai(self) -> dict:
+        with self.lock:
+            self.store.kv_set("anthropic_api_key", None)
+            self.brain = self._brain_from_saved_key()
+            self.version += 1
+        return {"ok": True}
 
     # ---------- output ----------
     def snapshot(self) -> dict:
@@ -471,6 +509,8 @@ class Hub:
                 "ai": {
                     "online": self.brain.online,
                     "model": self.cfg.anthropic_model if self.brain.online else None,
+                    "key_source": self.ai_key_source(),
+                    "topics": len(health_library.topics()),
                 },
                 "notify": {"telegram": self.notifier.enabled},
                 "profile": self.profile(),
