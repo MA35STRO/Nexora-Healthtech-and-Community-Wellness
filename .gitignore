@@ -15,7 +15,7 @@ frontend/playwright-report/
 *.db
 .env
 *.log
-tools/
+/tools/
 
 # Port chosen by start.ps1 / tunnel.ps1
 .kawan-port

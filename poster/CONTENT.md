@@ -38,6 +38,8 @@ Diagram: Browser (on the device: webcam → MediaPipe pose AI at 15 fps, raw vid
 
 Fall inset (real skeleton, UR Fall clip fall-04 [5]): upright → hips drop ≥ 0.6 of their own torso length in ≤ 1.5 s → body horizontal (≥ 60°) or out of view → still down after 2 s → check in. Kawan's own output: "Hip dropped 14% of frame (0.6× torso) in 1.3 s · torso 90° · no recovery within 2 s".
 
+**v2 Variation A fall panel:** "Our own fall test, seen by Kawan" — staged fall onto a floor mat by a team member (D:/kawan-eval/own/fall-ajmal.mp4, not in the repo), analysed by `backend/eval/analyse_video.py` with the app's model and detector. Kawan's real output: possible fall at 4.7 s — "Hip dropped 18% of frame (0.7× torso) in 1.4 s · torso 68° · no recovery within 2 s". Frames + skeleton: `poster/tools/make_own_fall.py`.
+
 ## 04 · THE APP *(Usability · real screens, demo data)*
 Large screenshots: **Fall alert, with reasons** · **On a phone** (Bahasa Melayu) · **Caregiver dashboard** (vitals, adherence, activity, check-ins).
 Also built and working: spoken reminders + missed-dose notice · vitals with sustained-reading alerts · daily check-in triage up to "call 999" · 104 cited health topics EN & BM · one-click doctor report.
@@ -55,7 +57,7 @@ Also built and working: spoken reminders + missed-dose notice · vitals with sus
 ## 07 · RESULTS *(Technical execution · Usability)*
 **Preliminary test · fall detector on recorded clips [5]**
 - **27 / 30 fall clips detected (90%).** The earlier frame-size rule: 17/30.
-- **13 / 40 everyday clips triggered a check-in**; 11 of them show people lying down on purpose.
+- **12 / 40 everyday clips triggered a check-in**; 10 of them show people lying down on purpose.
 - A check-in asks the person → "I'm okay" = low-priority note → phones alerted only on "help" or no reply.
 - *Test conditions:* UR Fall dataset, 70 lab clips of actors, one room, side-view camera; same pose model and settings as the app; each clip's last frame held 10 s (person stays down).
 - **Not real-world accuracy.** Preliminary lab testing; not clinically validated.
@@ -103,5 +105,5 @@ Also built and working: spoken reminders + missed-dose notice · vitals with sus
 | Pose model & WASM served locally (CDN only as fallback) | `useCamera.ts` `LOCAL_MODEL` / `CDN_MODEL`, `frontend/public/mediapipe` |
 | Voice input = browser Web Speech API (online service in Chrome/Edge) | `frontend/src/voice/useVoice.ts` |
 | Check-in does not alert phones; Telegram only on escalation or caregiver notice | `safety_engine.py` (`checkin_sent`, `user_ok`, `escalated`), `hub.py` `_record` |
-| 27/30, 13/40, 17/30, test conditions | `backend/eval/RESULTS.md` |
+| 27/30, 12/40, 17/30, test conditions | `backend/eval/RESULTS.md` |
 | 117 / 19 / 12 tests | pytest, vitest and Playwright runs on 2026-11-11 |

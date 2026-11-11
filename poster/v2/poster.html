@@ -158,7 +158,7 @@ body.day .team .tn { color: var(--amber-d); }
 .new .step.end { background: linear-gradient(90deg, var(--teal), #0aa59f); color: #fff; border-color: transparent; box-shadow: 0 0 4mm rgba(22,198,190,.45); }
 
 /* ================= 03 HOW IT WORKS ================= */
-.tech { background: var(--tech-bg); color: var(--on-dark); padding-top: 5mm; padding-bottom: 5.5mm; overflow: hidden; }
+.tech { background: var(--tech-bg); color: var(--on-dark); padding-top: 4.4mm; padding-bottom: 4.4mm; overflow: hidden; }
 .tech .glow.g4 { width: 260mm; height: 260mm; left: 30%; top: -140mm; background: radial-gradient(circle, rgba(22,198,190,.18), transparent 65%); }
 .tech .glow.g5 { width: 200mm; height: 200mm; right: -80mm; bottom: -110mm; background: radial-gradient(circle, rgba(169,155,255,.16), transparent 65%); }
 .tech-grid { position: relative; display: grid; grid-template-columns: .93fr 1fr; gap: 5mm; }
@@ -166,16 +166,17 @@ body.day .team .tn { color: var(--amber-d); }
 body.day .panel { border-color: rgba(255,255,255,.14); }
 .diagram { padding: 2.6mm 3mm; display: flex; align-items: center; }
 .diagram svg { width: 100%; display: block; }
-.fallp { padding: 3.8mm 4.6mm; display: flex; flex-direction: column; justify-content: space-between; }
+.fallp { padding: 3.2mm 4.4mm; display: flex; flex-direction: column; justify-content: space-between; }
 .fallp .ttl { font-family: "SG"; font-weight: 700; font-size: 17pt; color: #fff; }
 .fallp .ttl span { color: var(--cyan); }
-.fallp .sub { font-size: 12.5pt; color: var(--on-dark-2); margin: .6mm 0 2.6mm; }
+.fallp .sub { font-size: 12pt; color: var(--on-dark-2); margin: .4mm 0 2mm; }
 .fallp img { width: 90%; display: block; margin: 0 auto; }
-.stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-top: 2mm; }
+.fallp img.ownfall { width: 100%; border-radius: 3mm; border: .4mm solid rgba(22,198,190,.4); }
+.stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-top: 1.6mm; }
 .stg { border-top: 1mm solid var(--cyan); padding-top: 1.6mm; font-size: 12.5pt; line-height: 1.28; color: var(--on-dark); }
 .stg b { color: #fff; display: block; font-family: "SG"; font-size: 13.5pt; }
 .stg:nth-child(2) { border-color: #6fd8c9; } .stg:nth-child(3) { border-color: var(--amber); } .stg:nth-child(4) { border-color: var(--coral); }
-.out { margin-top: 2.2mm; border-radius: 3mm; padding: 2.6mm 3.6mm; background: #04111c; border: .4mm solid rgba(22,198,190,.35); font-family: "Plex"; font-weight: 500; font-size: 11.5pt; line-height: 1.45; color: #bfe6e1; }
+.out { margin-top: 1.8mm; border-radius: 3mm; padding: 2.6mm 3.6mm; background: #04111c; border: .4mm solid rgba(22,198,190,.35); font-family: "Plex"; font-weight: 500; font-size: 11.5pt; line-height: 1.45; color: #bfe6e1; }
 .out .lbl { color: var(--cyan); font-weight: 700; }
 .fallp .small { font-size: 11.5pt; color: var(--on-dark-2); margin-top: 1.8mm; }
 
@@ -530,16 +531,16 @@ body.day .panel { border-color: rgba(255,255,255,.14); }
         </svg>
       </div>
       <div class="panel fallp">
-        <div class="ttl">Fall detection on a <span>recorded fall clip</span></div>
-        <div class="sub">Real MediaPipe skeleton, UR Fall clip fall-04<sup class="r">5</sup> · orange dot = hip centre</div>
-        <img src="../assets/figures/fall-sequence-dark.svg" alt="Skeleton of a recorded fall at four moments">
+        <div class="ttl">Our own fall test, <span>seen by Kawan</span></div>
+        <div class="sub">Staged fall onto a floor mat by a team member · real video frames + the real MediaPipe skeleton · orange dot = hip centre</div>
+        <img class="ownfall" src="../assets/figures/own-fall-sequence.png" alt="Team member's staged fall with the detected skeleton at four moments">
         <div class="stages">
-          <div class="stg"><b>1 · Upright</b>start of the sequence</div>
+          <div class="stg"><b>1 · Upright</b>1.0 s</div>
           <div class="stg"><b>2 · Hips drop fast</b>≥ 0.6 torso lengths in ≤ 1.5 s</div>
           <div class="stg"><b>3 · Horizontal</b>torso ≥ 60° or out of view</div>
-          <div class="stg"><b>4 · Still down</b>after 2 s → check in</div>
+          <div class="stg"><b>4 · Still down</b>2 s later → check in</div>
         </div>
-        <div class="out"><span class="lbl">Kawan's own output for this clip</span><br>Hip dropped 14% of frame (0.6× torso) in 1.3 s · torso 90° · no recovery within 2 s</div>
+        <div class="out"><span class="lbl">Kawan's real output for this video · possible fall at 4.7 s</span><br>Hip dropped 18% of frame (0.7× torso) in 1.4 s · torso 68° · no recovery within 2 s</div>
       </div>
     </div>
   </section>
@@ -639,8 +640,8 @@ body.day .panel { border-color: rgba(255,255,255,.14); }
             <div><div class="big">27<small> / 30</small></div><p><b>fall clips detected.</b> The earlier frame-size rule: 17/30.</p></div>
           </div>
           <div class="metric amber">
-            <div><div class="dots" data-dots="40" data-on="13"></div></div>
-            <div><div class="big">13<small> / 40</small></div><p><b>everyday clips triggered a check-in</b>; 11 show people lying down on purpose.</p></div>
+            <div><div class="dots" data-dots="40" data-on="12"></div></div>
+            <div><div class="big">12<small> / 40</small></div><p><b>everyday clips triggered a check-in</b>; 10 show people lying down on purpose.</p></div>
           </div>
         </div>
         <div class="meaning"><div class="m ck">A check-in asks the person</div><div class="a">→</div><div class="m">"I'm okay" = low-priority note</div><div class="a">→</div><div class="m esc">Phones alerted only on "help" or no reply</div></div>
