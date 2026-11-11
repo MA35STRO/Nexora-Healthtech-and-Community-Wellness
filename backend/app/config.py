@@ -76,7 +76,7 @@ class Settings:
 
     # --- Notifications (optional) ---
     telegram_token: str = _s("TELEGRAM_BOT_TOKEN")
-    telegram_chat_id: str = _s("TELEGRAM_CHAT_ID")
+    telegram_chat_id: str = _s("TELEGRAM_CHAT_ID")  # one or more chat IDs, comma-separated
 
     # --- Profile ---
     user_name: str = _s("USER_NAME")

@@ -512,7 +512,10 @@ class Hub:
                     "key_source": self.ai_key_source(),
                     "topics": len(health_library.topics()),
                 },
-                "notify": {"telegram": self.notifier.enabled},
+                "notify": {
+                    "telegram": self.notifier.enabled,
+                    "telegram_recipients": len(self.notifier.chat_ids) if self.notifier.enabled else 0,
+                },
                 "profile": self.profile(),
                 "config": {"checkin_timeout_s": self.cfg.checkin_timeout_s},
             }

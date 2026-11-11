@@ -153,7 +153,12 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
             {snap.routine.still_s > 60 && (
               <span className="chip">still {Math.round(snap.routine.still_s / 60)} min</span>
             )}
-            {snap.notify.telegram && <span className="chip info">Telegram alerts on</span>}
+            {snap.notify.telegram && (
+              <span className="chip info">
+                Telegram alerts on · {snap.notify.telegram_recipients}{' '}
+                {snap.notify.telegram_recipients === 1 ? 'caregiver' : 'caregivers'}
+              </span>
+            )}
           </div>
         </section>
 

@@ -110,6 +110,22 @@ Then open **http://localhost:8000**. The browser asks for camera permission and 
 
 Optional: copy `.env.example` to `backend/.env` and add `ANTHROPIC_API_KEY` (Claude answers and pill check) or Telegram bot details.
 
+<details><summary>Phone alerts for one or more caregivers (Telegram)</summary>
+
+1. In Telegram, message **@BotFather**, send `/newbot` and copy the bot token.
+2. **Each caregiver** opens the new bot and presses **Start** (a bot can only message people who started it).
+3. Get each caregiver's chat ID, for example by messaging **@userinfobot**.
+4. In `backend/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=123456:ABC...
+   TELEGRAM_CHAT_ID=111111111,222222222,333333333
+   ```
+   List as many chat IDs as you like, separated by commas. A group chat ID (starts with `-100`) also works.
+5. Restart Kawan. The Caregiver page shows **Telegram alerts on · 3 caregivers**.
+
+Every caregiver gets every escalation and caregiver notice. If one chat ID is wrong, the others still get the alert.
+</details>
+
 <details><summary>Manual / development setup</summary>
 
 ```bash

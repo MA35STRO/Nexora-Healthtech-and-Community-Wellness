@@ -103,7 +103,7 @@ export interface Snapshot {
   meds: { today: DoseView[]; next: DoseView | null; schedule: Med[] }
   vitals: { latest: Vitals | null; history: Vitals[]; simulated: boolean; mode: string }
   ai: { online: boolean; model: string | null; key_source: 'env' | 'app' | null; topics: number }
-  notify: { telegram: boolean }
+  notify: { telegram: boolean; telegram_recipients: number }
   profile: Profile
   config: { checkin_timeout_s: number }
 }

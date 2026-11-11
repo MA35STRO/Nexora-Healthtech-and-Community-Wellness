@@ -102,6 +102,7 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
               </li>
               <li>
                 Untuk amaran ke telefon walaupun aplikasi ditutup, sediakan bot Telegram (lihat README).
+                Beberapa penjaga boleh menerima amaran yang sama.
               </li>
             </ul>
           ),
@@ -275,6 +276,7 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
             </li>
             <li>
               For alerts on your phone even when the app is closed, set up a Telegram bot (see the README).
+              Several caregivers can get the same alerts.
             </li>
           </ul>
         ),
