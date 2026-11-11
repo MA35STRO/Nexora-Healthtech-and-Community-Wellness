@@ -56,6 +56,8 @@ class FallDetector:
         need = self._needed_drop(start)
         if drop < need or now.t <= start.t:
             return None
+        if self._approaching(start.torso_len, now.torso_len):
+            return None  # hips moved down the picture because they walked towards the camera
         return {
             "t": now.t,
             "drop": drop,
@@ -74,9 +76,20 @@ class FallDetector:
             return self.cfg.min_drop
         return max(upright.torso_len, self.cfg.min_torso) * self.cfg.min_drop_torso
 
+    def _approaching(self, upright_torso: Optional[float], now_torso: Optional[float]) -> bool:
+        """Walking towards the camera also moves the hips down the picture, then out of view.
+
+        But the person grows on screen, while a falling torso looks the same or shorter. So a torso
+        that is now much bigger than it was when upright means "coming closer", not "falling".
+        """
+        return bool(upright_torso and now_torso and now_torso > upright_torso * self.cfg.max_growth)
+
     # --- steps 2+3: still down (or out of view) for still_s? ---
     def _confirm_or_cancel(self, obs: Observation) -> Optional[Detection]:
         c = self.candidate
+        if self.usable(obs) and self._approaching(c["torso"], obs.torso_len):
+            self.candidate = None  # they were walking towards the camera, not falling
+            return None
         if self.usable(obs):
             c["low_hip"] = max(c.get("low_hip", 0), obs.hip_y)
             c["max_angle"] = max(c.get("max_angle", 0), obs.torso_angle)

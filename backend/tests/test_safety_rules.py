@@ -125,6 +125,40 @@ def test_tiny_far_away_person_uses_minimum_size():
     assert feed_sized(FallDetector(CFG), stand + jitter, 0.03) == []
 
 
+def test_walking_towards_camera_then_out_of_view_not_flagged():
+    """Real case from the team's own test video: walking up to the camera moved the hips from 0.59 to
+    1.0 of the frame in 1.2 s, then the person left the view. The torso grew from 0.25 to 0.65 on
+    screen: they were coming closer, not falling."""
+    frames = [Observation(i / 15, True, 2, 0.59, "standing", "camera", True, None, 0.25) for i in range(30)]
+    for k in range(18):  # 1.2 s approach
+        t, f = 2 + k / 15, k / 17
+        frames.append(
+            Observation(t, True, 2, 0.59 + 0.41 * f, "standing", "camera", True, None, 0.25 + 0.40 * f)
+        )
+    frames += [Observation(3.3 + i / 15, False, source="camera") for i in range(60)]  # out of view
+    d = FallDetector(CFG)
+    assert [x for o in frames if (x := d.update(o))] == []
+
+
+def test_real_fall_shape_still_flagged_with_growth_check():
+    """Same person and camera, a real fall (from the same video): the torso looks SHORTER as they go
+    down (0.25 → 0.11), so the walking-towards-camera rule must not block it."""
+    frames = [Observation(i / 15, True, 1, 0.55, "standing", "camera", True, None, 0.25) for i in range(30)]
+    for k in range(20):  # 1.4 s down to the floor
+        f = k / 19
+        frames.append(
+            Observation(
+                2 + k / 15, True, 1 + 70 * f, 0.55 + 0.33 * f, "lying", "camera", True, None, 0.25 - 0.13 * f
+            )
+        )
+    frames += [
+        Observation(3.4 + i / 15, True, 76, 0.89, "lying", "camera", True, None, 0.12) for i in range(60)
+    ]
+    d = FallDetector(CFG)
+    out = [x for o in frames if (x := d.update(o))]
+    assert len(out) == 1 and any("horizontal" in r for r in out[0].reasons)
+
+
 def test_camera_frames_carry_torso_size():
     from app.pose import observation_from_points
 

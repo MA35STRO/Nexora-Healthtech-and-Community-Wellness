@@ -37,6 +37,8 @@ class Settings:
     # Hip must drop this many TORSO LENGTHS (so it works near or far from the camera)...
     min_drop_torso: float = _f("FALL_MIN_DROP_TORSO", 0.6)
     min_torso: float = _f("FALL_MIN_TORSO", 0.08)  # smaller (very far away) is treated as this size
+    # Torso this many times bigger than when upright = walking towards the camera, not falling
+    max_growth: float = _f("FALL_MAX_GROWTH", 1.5)
     min_drop: float = _f("FALL_MIN_DROP", 0.20)  # ...or this fraction of frame height if size unknown
     upright_angle: float = _f("FALL_UPRIGHT_ANGLE", 35)  # ...from an upright torso (deg from vertical)
     horizontal_angle: float = _f("FALL_HORIZONTAL_ANGLE", 60)  # ...to a near-horizontal torso

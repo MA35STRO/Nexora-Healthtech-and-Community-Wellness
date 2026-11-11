@@ -1,6 +1,6 @@
 # Fall detector evaluation — UR Fall Detection Dataset
 
-Run on 2026-11-11 against commit `3a8ca75` onwards (fall drop measured in torso lengths).
+Run on 2026-11-11 (fall drop measured in torso lengths; walking-towards-camera check added the same day).
 
 ## Method
 
@@ -20,14 +20,22 @@ Run on 2026-11-11 against commit `3a8ca75` onwards (fall drop measured in torso 
 | Rule | Falls caught | ADL clips with no false alarm |
 |---|---|---|
 | Old: hip drop ≥ 20% of frame height | 17 / 30 (56.7%) | 36 / 40 (90.0%) |
-| **Current: hip drop ≥ 0.6 torso lengths** | **27 / 30 (90.0%)** | 27 / 40 (67.5%) |
+| Torso-length rule (0.6 torso lengths) | 27 / 30 (90.0%) | 27 / 40 (67.5%) |
+| **Current: + "walking towards the camera" check** | **27 / 30 (90.0%)** | **28 / 40 (70.0%)** |
 
 - Missed falls: `fall-03`, `fall-13`, `fall-23`.
-- False alarms: `adl-18, 20, 21, 22, 23, 30, 31, 32, 33, 35, 38, 39, 40`. By the dataset's own frame labels,
-  11 of these 13 clips contain the person **lying down** (on a bed or the floor) — the known limitation
+- False check-ins: `adl-18, 20, 21, 22, 23, 30, 31, 32, 33, 35, 39, 40`. By the dataset's own frame labels,
+  10 of these 12 clips contain the person **lying down** (on a bed or the floor) — the known limitation
   that Kawan handles by checking in ("Are you okay?") before alerting anyone.
 
-Threshold sweep (`--sweep`):
+**Walking-towards-the-camera check** (added after the team's own test video): walking up to the camera
+moves the hips down the picture and then out of view, which looked like "drop, then out of view". The
+person grows on screen while a falling torso looks the same or shorter, so a drop is ignored when the torso
+is now more than `max_growth` = 1.5× its upright size. It removed the false alarm in the team's video
+(the real fall in the same video is still detected at 4.7 s) and one UR Fall false check-in (`adl-38`),
+with no fall lost.
+
+Threshold sweep (`--sweep`, measured before the walking-towards-camera check):
 
 | Setting | Falls caught | ADL clean |
 |---|---|---|
