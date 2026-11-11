@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kawan Poster v2</title>
+<style>
+/* ==========================================================================
+   KAWAN — A1 poster v2 "The Digital Guardian" (594 × 841 mm)
+   Same facts as ../CONTENT.md (refined, code-verified). Variation A = default;
+   ?v=day → Variation B "Daylight". ?bleed=3 → 3 mm bleed. Build: node poster/v2/build.mjs
+   ========================================================================== */
+@font-face { font-family: "SG"; src: url("../assets/fonts/SpaceGrotesk.ttf") format("truetype"); font-weight: 300 700; }
+@font-face { font-family: "Inter"; src: url("../assets/fonts/Inter.ttf") format("truetype"); font-weight: 100 900; }
+@font-face { font-family: "Plex"; src: url("../assets/fonts/IBMPlexMono-Medium.ttf") format("truetype"); font-weight: 500; }
+@font-face { font-family: "Plex"; src: url("../assets/fonts/IBMPlexMono-SemiBold.ttf") format("truetype"); font-weight: 600; }
+@font-face { font-family: "Plex"; src: url("../assets/fonts/IBMPlexMono-Bold.ttf") format("truetype"); font-weight: 700; }
+
+:root {
+  --b: 0mm;
+  /* primary */ --navy: #081827; --navy-2: #0d2436; --navy-3: #12324a; --teal: #087f8c; --cyan: #16c6be;
+  /* accents */ --amber: #ffbf69; --amber-d: #c97a12; --coral: #ff7272; --coral-d: #d8434a; --violet: #a99bff; --violet-d: #6b5bd6;
+  /* grounds */ --ice: #f1f7fa; --mint: #dff4f1; --blue: #e8f0fa;
+  /* text */ --ink: #081827; --ink-2: #2f4757; --ink-3: #5a7282; --on-dark: #d7e8ee; --on-dark-2: #93b2bd;
+  --line: #d3e2e8; --line-d: #1d3c52;
+  /* variation hooks */
+  --hero-bg: var(--navy); --hero-ink: #ffffff; --hero-ink-2: var(--on-dark); --hero-line: rgba(22,198,190,.35);
+  --tech-bg: var(--navy); --tech-card: #0c2436; --tech-ink: #ffffff; --tech-ink-2: var(--on-dark-2);
+}
+body.day {
+  --hero-bg: var(--ice); --hero-ink: var(--navy); --hero-ink-2: var(--ink-2); --hero-line: rgba(8,127,140,.35);
+  --tech-bg: #06505a; --tech-card: #0a5f6a;
+}
+@page { size: calc(594mm + 2 * var(--b)) calc(841mm + 2 * var(--b)); margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #7c878d; }
+body { font-family: "Inter", sans-serif; color: var(--ink-2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media print { html, body { background: none; } }
+.sheet { width: calc(594mm + 2 * var(--b)); height: calc(841mm + 2 * var(--b)); background: var(--ice); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.sheet > * { flex-shrink: 0; }
+b, strong { font-weight: 700; color: inherit; }
+.i { width: 1em; height: 1em; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+sup.r { font-family: "Plex"; font-weight: 700; font-size: .58em; color: var(--teal); vertical-align: super; line-height: 0; margin-left: .3mm; }
+.dark sup.r, .on-dark sup.r { color: var(--cyan); }
+.band { position: relative; padding-left: calc(18mm + var(--b)); padding-right: calc(18mm + var(--b)); }
+.mono { font-family: "Plex"; }
+.kicker { font-family: "Plex"; font-weight: 600; font-size: 11pt; letter-spacing: .14em; text-transform: uppercase; }
+
+/* section heads */
+.sh { display: flex; align-items: baseline; gap: 3.5mm; margin-bottom: 3.6mm; }
+.sh .n { font-family: "Plex"; font-weight: 700; font-size: 14pt; color: var(--teal); padding: .6mm 2.2mm; border: .5mm solid currentColor; border-radius: 2mm; align-self: center; }
+.sh h2 { font-family: "SG"; font-weight: 700; font-size: 30pt; letter-spacing: -.02em; color: var(--ink); line-height: 1; }
+.sh .crit { margin-left: auto; font-family: "Plex"; font-weight: 600; font-size: 10pt; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.dark .sh h2, .sh.dark h2 { color: #fff; } .dark .sh .n, .sh.dark .n { color: var(--cyan); } .dark .sh .crit, .sh.dark .crit { color: var(--on-dark-2); }
+
+/* decorative layers */
+.grid-tex { position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(22,198,190,.07) .3mm, transparent .3mm), linear-gradient(90deg, rgba(22,198,190,.07) .3mm, transparent .3mm);
+  background-size: 9mm 9mm; }
+.grid-tex.light { background-image: linear-gradient(rgba(8,127,140,.06) .25mm, transparent .25mm), linear-gradient(90deg, rgba(8,127,140,.06) .25mm, transparent .25mm); }
+.net { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(2mm); }
+
+/* ================= HERO ================= */
+.hero { background: var(--hero-bg); color: var(--hero-ink); padding-top: calc(7mm + var(--b)); padding-bottom: 7mm; overflow: hidden; }
+.hero .glow.g1 { width: 320mm; height: 320mm; right: -70mm; top: -80mm; background: radial-gradient(circle, rgba(22,198,190,.30), rgba(8,127,140,.10) 45%, transparent 70%); }
+.hero .glow.g2 { width: 220mm; height: 220mm; left: -90mm; bottom: -120mm; background: radial-gradient(circle, rgba(169,155,255,.18), transparent 65%); }
+body.day .hero .glow.g1 { background: radial-gradient(circle, rgba(22,198,190,.28), rgba(223,244,241,.6) 45%, transparent 70%); }
+.hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.8mm; background: linear-gradient(90deg, var(--violet), var(--cyan) 45%, var(--teal) 70%, var(--amber)); }
+.logos { position: relative; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1mm; }
+.logos .utp { height: 15mm; }
+body.day .logos .utp-wrap { background: var(--navy); border-radius: 4mm; padding: 2.4mm 4mm; }
+body.day .logos .utp { height: 12.5mm; display: block; }
+.logos .cf { height: 28mm; mix-blend-mode: screen; margin: -4mm 0; }
+body.day .logos .cf-wrap { background: var(--navy); border-radius: 4mm; padding: .6mm 2.6mm; }
+body.day .logos .cf { height: 23mm; margin: -2mm 0; }
+.logos .event { font-family: "Plex"; font-weight: 600; font-size: 13pt; letter-spacing: .2em; color: var(--hero-ink-2); }
+.logos .event b { color: var(--cyan); }
+body.day .logos .event b { color: var(--teal); }
+.hero-grid { position: relative; display: grid; grid-template-columns: 1fr 200mm; gap: 6mm; align-items: center; }
+.wordmark { font-family: "SG"; font-weight: 700; font-size: 106pt; line-height: .82; letter-spacing: -.045em; }
+.wordmark span { background: linear-gradient(100deg, var(--cyan), #7ff0dd 50%, var(--amber)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+body.day .wordmark span { background: linear-gradient(100deg, var(--teal), var(--cyan) 55%, #e09a2e); -webkit-background-clip: text; background-clip: text; }
+.malay { font-family: "Plex"; font-weight: 500; font-size: 12.5pt; color: var(--cyan); letter-spacing: .1em; margin: 2.4mm 0 3.6mm; }
+body.day .malay { color: var(--teal); }
+.tagline { font-family: "SG"; font-weight: 600; font-size: 27pt; line-height: 1.1; letter-spacing: -.01em; }
+.support { font-size: 16.5pt; line-height: 1.35; color: var(--hero-ink-2); margin-top: 1.6mm; }
+.position { display: inline-flex; gap: 2.6mm; margin-top: 3.6mm; flex-wrap: wrap; }
+.position span { font-family: "SG"; font-weight: 600; font-size: 14pt; padding: 1.3mm 3.6mm; border-radius: 99mm; border: .5mm solid var(--hero-line); color: var(--hero-ink-2); }
+.position span.g { background: linear-gradient(90deg, var(--teal), var(--cyan)); color: #fff; border-color: transparent; }
+.team { margin-top: 4mm; padding-top: 3mm; border-top: .4mm solid var(--hero-line); }
+.team .tn { font-family: "SG"; font-weight: 700; font-size: 18pt; color: var(--amber); letter-spacing: .01em; }
+body.day .team .tn { color: var(--amber-d); }
+.team .tn small { font-family: "Plex"; font-weight: 600; font-size: 11pt; color: var(--hero-ink-2); letter-spacing: .14em; margin-left: 3mm; }
+.team .members { font-size: 12.5pt; line-height: 1.42; color: var(--hero-ink-2); margin-top: 1mm; }
+.guardian { position: relative; height: 98mm; }
+.guardian svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gchip { position: absolute; display: flex; align-items: center; gap: 2.4mm; padding: 2mm 3.6mm 2mm 2.4mm; border-radius: 99mm; font-family: "SG"; font-weight: 600; font-size: 13pt; color: #fff; box-shadow: 0 1.5mm 5mm rgba(0,0,0,.25); white-space: nowrap; }
+.gchip .ic { width: 8mm; height: 8mm; border-radius: 99mm; display: grid; place-items: center; background: rgba(255,255,255,.18); font-size: 13pt; }
+.gchip.c1 { left: 0; top: 14mm; background: linear-gradient(90deg, #0b6f7a, var(--teal)); }
+.gchip.c2 { right: 0; top: 40mm; background: linear-gradient(90deg, #d88b1c, #f0a640); }
+.gchip.c3 { left: 8mm; bottom: 6mm; background: linear-gradient(90deg, #c8394a, var(--coral)); }
+.gchip small { font-family: "Inter"; font-weight: 500; font-size: 10.5pt; opacity: .85; margin-left: 1mm; }
+
+/* ================= 01 PROBLEM + 02 SOLUTION ================= */
+.ps { background: var(--ice); padding-top: 5.5mm; padding-bottom: 5mm; display: grid; grid-template-columns: 1.12fr 1fr; gap: 9mm; overflow: hidden; }
+.ps .glow.g3 { width: 160mm; height: 160mm; left: -40mm; top: -60mm; background: radial-gradient(circle, rgba(255,191,105,.22), transparent 65%); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; position: relative; }
+.stat { display: grid; grid-template-columns: 13mm 1fr; gap: 3.2mm; padding: 2.8mm 4mm 2.8mm 0; border-top: .5mm solid var(--line); }
+.stat:nth-child(odd) { padding-right: 6mm; border-right: .5mm solid var(--line); }
+.stat:nth-child(even) { padding-left: 6mm; }
+.stat .ic { width: 13mm; height: 13mm; border-radius: 4mm; display: grid; place-items: center; font-size: 19pt; }
+.stat .big { font-family: "SG"; font-weight: 700; font-size: 40pt; line-height: .95; letter-spacing: -.03em; }
+.stat .big small { font-size: .45em; letter-spacing: 0; }
+.stat p { font-size: 13.5pt; line-height: 1.32; margin-top: 1.4mm; color: var(--ink-2); }
+.stat p b { color: var(--ink); }
+.st-teal .ic { background: var(--mint); color: var(--teal); } .st-teal .big { color: var(--teal); }
+.st-coral .ic { background: #ffe3e3; color: var(--coral-d); } .st-coral .big { color: var(--coral-d); }
+.st-amber .ic { background: #fff0d9; color: var(--amber-d); } .st-amber .big { color: var(--amber-d); }
+.st-violet .ic { background: #ecebff; color: var(--violet-d); } .st-violet .big { color: var(--violet-d); }
+
+.solution { position: relative; background: linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 60%, #0a4a55 100%); border-radius: 6mm; padding: 4mm 5.4mm 4.4mm; color: var(--on-dark); overflow: hidden; }
+.solution .grid-tex { opacity: .8; }
+.solution .sh h2 { color: #fff; } .solution .sh .n { color: var(--cyan); } .solution .sh .crit { color: var(--on-dark-2); }
+.path { position: relative; display: grid; gap: 2.2mm; }
+.path::before { content: ""; position: absolute; left: 5.65mm; top: 7mm; bottom: 7mm; width: 1.2mm; border-radius: 1mm; background: linear-gradient(180deg, var(--cyan), var(--amber) 40%, var(--coral) 70%, #c9d8ff); box-shadow: 0 0 3mm rgba(22,198,190,.6); }
+.node { position: relative; display: grid; grid-template-columns: 12.5mm 1fr; gap: 3.4mm; align-items: center; }
+.node .ic { width: 12.5mm; height: 12.5mm; border-radius: 99mm; display: grid; place-items: center; font-size: 16pt; color: #fff; position: relative; z-index: 1; box-shadow: 0 0 0 1.4mm rgba(8,24,39,.9); }
+.node .tx h3 { font-family: "SG"; font-weight: 700; font-size: 17pt; color: #fff; line-height: 1.1; }
+.node .tx h3 em { font-style: normal; font-family: "Plex"; font-weight: 600; font-size: 10.5pt; letter-spacing: .12em; margin-right: 2mm; vertical-align: .5mm; }
+.node .tx p { font-size: 13pt; line-height: 1.28; color: var(--on-dark); margin-top: .3mm; }
+.node .tx p b { color: #fff; }
+.n1 .ic { background: linear-gradient(135deg, var(--teal), var(--cyan)); } .n1 em { color: var(--cyan); }
+.n2 .ic { background: linear-gradient(135deg, #d88b1c, var(--amber)); } .n2 em { color: var(--amber); }
+.n3 .ic { background: linear-gradient(135deg, var(--coral-d), var(--coral)); } .n3 em { color: var(--coral); }
+.n4 .ic { background: linear-gradient(135deg, #4b5fae, #8fa6ff); } .n4 em { color: #c9d8ff; }
+
+/* ================= ALARM vs KAWAN ================= */
+.versus { background: linear-gradient(90deg, #0a1d2e, var(--navy) 50%, #0a2a36); color: var(--on-dark); padding-top: 3.6mm; padding-bottom: 3.6mm; overflow: hidden; }
+.versus .grid-tex { opacity: .6; }
+.vrow { position: relative; display: grid; grid-template-columns: 86mm 1fr; gap: 5mm; align-items: center; }
+.vrow + .vrow { margin-top: 2.6mm; }
+.vlab { display: flex; align-items: center; gap: 2.8mm; }
+.vlab .ic { width: 11mm; height: 11mm; border-radius: 3mm; display: grid; place-items: center; font-size: 16pt; }
+.vlab .t { font-family: "SG"; font-weight: 700; font-size: 15.5pt; line-height: 1.05; white-space: nowrap; }
+.vlab .t small { display: block; font-family: "Plex"; font-weight: 600; font-size: 9.5pt; letter-spacing: .1em; text-transform: uppercase; opacity: .75; margin-top: .6mm; }
+.old .vlab .ic { background: #24384a; color: #9fb0ba; } .old .vlab .t { color: #b8c6cd; }
+.new .vlab .ic { background: linear-gradient(135deg, var(--teal), var(--cyan)); color: #fff; } .new .vlab .t { color: #fff; }
+.track { display: grid; grid-template-columns: 1fr 1.2fr 1.5fr; gap: 9mm; position: relative; }
+.track::before { content: ""; position: absolute; left: 3mm; right: 3mm; top: 50%; height: .7mm; transform: translateY(-50%); }
+.old .track::before { background: repeating-linear-gradient(90deg, #4a5d6b 0 3mm, transparent 3mm 5mm); }
+.new .track::before { background: linear-gradient(90deg, var(--cyan), var(--amber) 55%, var(--coral)); height: 1mm; box-shadow: 0 0 3mm rgba(22,198,190,.7); }
+.step { position: relative; z-index: 1; border-radius: 3mm; padding: 1.7mm 3.2mm; font-size: 13.5pt; line-height: 1.22; font-weight: 600; display: flex; align-items: center; gap: 2.4mm; }
+.old .step { background: #162a3a; color: #a8b8c0; border: .4mm solid #2a4255; }
+.new .step { background: #0e3446; color: #e9f7f5; border: .4mm solid rgba(22,198,190,.5); }
+.step .i { font-size: 15pt; }
+.old .step.end { background: #3a1f29; color: #ffb3b3; border-color: rgba(255,114,114,.55); }
+.new .step.end { background: linear-gradient(90deg, var(--teal), #0aa59f); color: #fff; border-color: transparent; box-shadow: 0 0 4mm rgba(22,198,190,.45); }
+
+/* ================= 03 HOW IT WORKS ================= */
+.tech { background: var(--tech-bg); color: var(--on-dark); padding-top: 5mm; padding-bottom: 5.5mm; overflow: hidden; }
+.tech .glow.g4 { width: 260mm; height: 260mm; left: 30%; top: -140mm; background: radial-gradient(circle, rgba(22,198,190,.18), transparent 65%); }
+.tech .glow.g5 { width: 200mm; height: 200mm; right: -80mm; bottom: -110mm; background: radial-gradient(circle, rgba(169,155,255,.16), transparent 65%); }
+.tech-grid { position: relative; display: grid; grid-template-columns: .93fr 1fr; gap: 5mm; }
+.panel { background: var(--tech-card); border: .4mm solid var(--line-d); border-radius: 5mm; position: relative; }
+body.day .panel { border-color: rgba(255,255,255,.14); }
+.diagram { padding: 2.6mm 3mm; display: flex; align-items: center; }
+.diagram svg { width: 100%; display: block; }
+.fallp { padding: 3.8mm 4.6mm; display: flex; flex-direction: column; justify-content: space-between; }
+.fallp .ttl { font-family: "SG"; font-weight: 700; font-size: 17pt; color: #fff; }
+.fallp .ttl span { color: var(--cyan); }
+.fallp .sub { font-size: 12.5pt; color: var(--on-dark-2); margin: .6mm 0 2.6mm; }
+.fallp img { width: 90%; display: block; margin: 0 auto; }
+.stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-top: 2mm; }
+.stg { border-top: 1mm solid var(--cyan); padding-top: 1.6mm; font-size: 12.5pt; line-height: 1.28; color: var(--on-dark); }
+.stg b { color: #fff; display: block; font-family: "SG"; font-size: 13.5pt; }
+.stg:nth-child(2) { border-color: #6fd8c9; } .stg:nth-child(3) { border-color: var(--amber); } .stg:nth-child(4) { border-color: var(--coral); }
+.out { margin-top: 2.2mm; border-radius: 3mm; padding: 2.6mm 3.6mm; background: #04111c; border: .4mm solid rgba(22,198,190,.35); font-family: "Plex"; font-weight: 500; font-size: 11.5pt; line-height: 1.45; color: #bfe6e1; }
+.out .lbl { color: var(--cyan); font-weight: 700; }
+.fallp .small { font-size: 11.5pt; color: var(--on-dark-2); margin-top: 1.8mm; }
+
+/* ================= 04 THE APP ================= */
+.app { background: linear-gradient(180deg, var(--blue), var(--ice)); padding-top: 4.6mm; padding-bottom: 4.4mm; overflow: hidden; }
+.app .glow.g6 { width: 240mm; height: 240mm; left: 25%; top: -60mm; background: radial-gradient(circle, rgba(22,198,190,.20), transparent 65%); }
+.app .glow.g7 { width: 180mm; height: 180mm; right: -40mm; bottom: -90mm; background: radial-gradient(circle, rgba(169,155,255,.20), transparent 65%); }
+.showcase { position: relative; display: grid; grid-template-columns: auto auto auto 1fr; gap: 6mm; align-items: end; }
+.frame { background: #fff; border-radius: 3.2mm; overflow: hidden; box-shadow: 0 3mm 9mm rgba(8,24,39,.18), 0 .6mm 1.6mm rgba(8,24,39,.12); border: .4mm solid #c9d7de; }
+.frame .bar { height: 6.5mm; background: #e7eef2; display: flex; align-items: center; gap: 1.4mm; padding: 0 2.6mm; border-bottom: .4mm solid #d3dfe5; }
+.frame .bar i { width: 2.2mm; height: 2.2mm; border-radius: 99mm; background: #f17a76; }
+.frame .bar i:nth-child(2) { background: #f3c14f; } .frame .bar i:nth-child(3) { background: #58c27d; }
+.frame .bar span { margin-left: 2mm; flex: 1; height: 3.8mm; border-radius: 99mm; background: #fff; font-family: "Plex"; font-weight: 500; font-size: 8.5pt; color: #6f8590; display: flex; align-items: center; padding-left: 2.4mm; }
+.frame img { display: block; }
+.phone { background: #0b1a26; border-radius: 7mm; padding: 2.6mm 1.8mm 3.4mm; box-shadow: 0 3mm 9mm rgba(8,24,39,.28); position: relative; }
+.phone::before { content: ""; position: absolute; left: 50%; top: 1mm; transform: translateX(-50%); width: 10mm; height: 1mm; border-radius: 99mm; background: #2c3e4b; }
+.phone img { display: block; border-radius: 4.4mm; }
+.shot-cap { margin-top: 2mm; }
+.shot-cap h3 { font-family: "SG"; font-weight: 700; font-size: 15.5pt; color: var(--ink); line-height: 1.15; display: flex; align-items: center; gap: 2mm; }
+.shot-cap h3 .i { color: var(--teal); font-size: 14pt; }
+.shot-cap p { font-size: 12.5pt; color: var(--ink-3); margin-top: .4mm; }
+.also { align-self: end; display: grid; grid-template-columns: auto 1fr; gap: 4mm; align-items: end; }
+.also .chips { flex-direction: column; align-items: flex-start; margin-bottom: 9mm; }
+.chips { display: flex; flex-wrap: wrap; gap: 2mm; }
+.chip { display: inline-flex; align-items: center; gap: 1.8mm; background: #fff; border: .4mm solid var(--line); border-radius: 99mm; padding: 1.4mm 3.2mm 1.4mm 2.2mm; font-size: 12.5pt; color: var(--ink); font-weight: 600; box-shadow: 0 .6mm 1.6mm rgba(8,24,39,.06); }
+.chip .i { color: var(--teal); font-size: 13pt; }
+
+/* ================= 05 PRIVACY + 06 OFFLINE ================= */
+.po { background: var(--ice); padding-top: 4.4mm; padding-bottom: 4.4mm; display: grid; grid-template-columns: 1.1fr 1fr; gap: 6mm; }
+.privacy { position: relative; background: radial-gradient(120% 140% at 0% 0%, #123a50 0%, var(--navy) 55%); border-radius: 6mm; padding: 4mm 5.4mm; color: var(--on-dark); overflow: hidden; }
+.privacy .shield { position: absolute; right: -12mm; top: -10mm; width: 70mm; height: 70mm; color: rgba(22,198,190,.12); }
+.privacy ul { list-style: none; display: grid; gap: 1.6mm; position: relative; }
+.privacy li { display: grid; grid-template-columns: 7mm 1fr; gap: 2.4mm; font-size: 13pt; line-height: 1.28; color: var(--on-dark); }
+.privacy li .ic { width: 7mm; height: 7mm; border-radius: 2.4mm; background: rgba(22,198,190,.16); color: var(--cyan); display: grid; place-items: center; font-size: 12pt; }
+.privacy li b { color: #fff; }
+.flowline { position: relative; margin-top: 2.8mm; padding-top: 2.6mm; border-top: .4mm solid var(--line-d); }
+.flowline .kicker { color: var(--cyan); margin-bottom: 2.2mm; }
+.fl { display: grid; grid-template-columns: 1fr 7mm 1fr 7mm 1fr; align-items: center; }
+.fl .box { display: flex; align-items: center; gap: 2.2mm; border-radius: 3mm; padding: 2mm 2.6mm; background: #0f2c40; border: .4mm solid var(--line-d); font-size: 12.5pt; line-height: 1.22; color: var(--on-dark); }
+.fl .box .i { font-size: 15pt; color: var(--cyan); }
+.fl .box b { color: #fff; display: block; }
+.fl .box.hot { background: linear-gradient(135deg, #0b5560, #0a7a80); border-color: transparent; }
+.fl .box.hot .i { color: #fff; }
+.fl .arrow { height: .8mm; background: var(--cyan); position: relative; margin: 0 1mm; box-shadow: 0 0 2mm rgba(22,198,190,.8); }
+.fl .arrow::after { content: ""; position: absolute; right: -1mm; top: 50%; transform: translateY(-50%); border-left: 2mm solid var(--cyan); border-top: 1.4mm solid transparent; border-bottom: 1.4mm solid transparent; }
+.flowline p { font-size: 12.5pt; line-height: 1.3; color: var(--on-dark-2); margin-top: 1.8mm; }
+.flowline p b { color: #fff; }
+.offline { display: grid; grid-template-rows: auto 1fr; }
+.oc { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.ocol { border-radius: 5mm; padding: 3.4mm 4.2mm; position: relative; overflow: hidden; }
+.ocol.local { background: linear-gradient(160deg, #e3f7f2, #cdeee8); border: .45mm solid #b5e3da; }
+.ocol.net { background: linear-gradient(160deg, #eceafe, #dfe6fb); border: .45mm solid #cfd0f7; }
+.ocol h3 { display: flex; align-items: center; gap: 2.4mm; font-family: "SG"; font-weight: 700; font-size: 15.5pt; color: var(--ink); margin-bottom: 2.4mm; }
+.ocol h3 .ic { width: 9mm; height: 9mm; border-radius: 3mm; display: grid; place-items: center; font-size: 14pt; color: #fff; }
+.local h3 .ic { background: var(--teal); } .net h3 .ic { background: var(--violet-d); }
+.ocol ul { list-style: none; display: grid; gap: 1.3mm; }
+.ocol li { font-size: 13pt; line-height: 1.26; color: var(--ink); padding-left: 5mm; position: relative; }
+.ocol li::before { content: ""; position: absolute; left: 0; top: 2mm; width: 2.2mm; height: 2.2mm; border-radius: 99mm; }
+.local li::before { background: var(--teal); } .net li::before { background: var(--violet-d); }
+.ocol li small { color: var(--ink-3); font-size: .88em; }
+
+/* ================= 07 RESULTS ================= */
+.results { background: var(--ice); padding-top: 0; padding-bottom: 4mm; position: relative; }
+.res-grid { display: grid; grid-template-columns: 1.18fr 1fr; gap: 6mm; }
+.evalp { background: #fff; border-radius: 6mm; border: .45mm solid var(--line); padding: 3.8mm 5mm; box-shadow: 0 1.6mm 5mm rgba(8,24,39,.06); position: relative; overflow: hidden; }
+.evalp .kicker { color: var(--ink-3); }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin: 2.2mm 0 2.4mm; }
+.metric { display: grid; grid-template-columns: auto 1fr; gap: 3.6mm; align-items: center; }
+.ring { width: 24mm; height: 24mm; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .v { position: absolute; inset: 0; display: grid; place-items: center; font-family: "SG"; font-weight: 700; font-size: 18pt; color: var(--teal); }
+.metric .big { font-family: "SG"; font-weight: 700; font-size: 40pt; line-height: .9; letter-spacing: -.03em; color: var(--ink); }
+.metric .big small { font-size: .42em; color: var(--ink-3); letter-spacing: 0; }
+.metric p { font-size: 13pt; line-height: 1.28; margin-top: 1.2mm; }
+.metric p b { color: var(--ink); }
+.dots { display: grid; grid-template-columns: repeat(10, 2.4mm); gap: 1mm; margin-bottom: 1.4mm; }
+.dots i { width: 2.4mm; height: 2.4mm; border-radius: 99mm; background: #d9e5ea; }
+.dots i.on { background: var(--amber-d); }
+.metric.amber .big { color: var(--amber-d); }
+.meaning { display: grid; grid-template-columns: 1fr 6mm 1fr 6mm 1.15fr; align-items: center; background: var(--blue); border-radius: 3.4mm; padding: 2.4mm 3mm; }
+.meaning .m { font-size: 12.5pt; line-height: 1.22; font-weight: 600; border-radius: 2.6mm; padding: 1.8mm 2.6mm; text-align: center; color: var(--ink); background: #fff; border: .4mm solid var(--line); }
+.meaning .m.ck { background: #fff3df; border-color: #f4d6a6; color: #7a4a06; }
+.meaning .m.esc { background: var(--coral-d); color: #fff; border-color: transparent; }
+.meaning .a { text-align: center; color: var(--teal); font-weight: 800; font-size: 14pt; }
+.cond { font-size: 12.5pt; line-height: 1.3; color: var(--ink-2); margin-top: 2mm; }
+.cond b { color: var(--ink); }
+.honest { margin-top: 2.2mm; display: flex; align-items: center; gap: 2.4mm; background: #fff3df; border: .4mm solid #f4d6a6; border-radius: 2.6mm; padding: 1.8mm 3mm; font-size: 12.5pt; color: #7a4a06; }
+.honest .i { font-size: 14pt; }
+.rcol { display: grid; gap: 4mm; grid-template-rows: auto 1fr; }
+.tests { background: linear-gradient(135deg, var(--navy), #0c3346); border-radius: 6mm; padding: 3.2mm 5mm; color: var(--on-dark); display: grid; grid-template-columns: auto 1fr; gap: 5mm; align-items: center; }
+.tests .big { font-family: "SG"; font-weight: 700; font-size: 48pt; line-height: .9; color: #fff; letter-spacing: -.03em; }
+.tests .big small { display: block; font-family: "Plex"; font-weight: 600; font-size: 10pt; letter-spacing: .14em; color: var(--cyan); margin-top: 1.4mm; }
+.stack { display: flex; height: 5mm; border-radius: 99mm; overflow: hidden; margin-bottom: 2mm; }
+.stack i:nth-child(1) { background: var(--cyan); } .stack i:nth-child(2) { background: var(--violet); } .stack i:nth-child(3) { background: var(--amber); }
+.legend { display: flex; gap: 4mm; font-size: 12pt; color: var(--on-dark); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 1.4mm; }
+.legend span::before { content: ""; width: 2.6mm; height: 2.6mm; border-radius: 99mm; background: var(--c); }
+.tests p { font-size: 12pt; color: var(--on-dark-2); margin-top: 1.4mm; }
+.voices { background: #fff; border-radius: 6mm; border: .45mm solid var(--line); padding: 3.4mm 4.6mm; box-shadow: 0 1.6mm 5mm rgba(8,24,39,.06); }
+.voices .kicker { color: var(--ink-3); }
+.qs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8mm 3mm; margin: 2mm 0 2.2mm; }
+.q { position: relative; padding: 1.6mm 2.6mm 1.6mm 7mm; background: var(--mint); border-radius: 3mm; font-size: 12.5pt; line-height: 1.28; color: var(--ink); font-style: italic; }
+.q::before { content: "“"; position: absolute; left: 2mm; top: -.6mm; font-family: "SG"; font-weight: 700; font-size: 22pt; color: var(--teal); font-style: normal; }
+.heard { display: grid; grid-template-columns: 1fr auto 1.05fr; gap: .9mm 2.4mm; align-items: center; font-size: 12.5pt; line-height: 1.25; }
+.heard .h { color: var(--ink); }
+.heard .ar { color: var(--teal); font-weight: 800; }
+.heard .d { color: var(--ink-2); }
+.heard .d b { color: #1f8a54; }
+.heard .hd { font-family: "Plex"; font-weight: 600; font-size: 9.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ================= 08 FEASIBILITY ================= */
+.feas { background: linear-gradient(180deg, var(--ice), var(--mint)); padding-top: 0; padding-bottom: 3.6mm; display: grid; grid-template-columns: .9fr 1.6fr; gap: 6mm; align-items: stretch; position: relative; overflow: hidden; }
+.ready { background: #fff; border-radius: 5mm; border: .45mm solid var(--line); padding: 3.4mm 4.6mm; }
+.ready h3, .roadmap h3 { font-family: "SG"; font-weight: 700; font-size: 16pt; color: var(--ink); margin-bottom: 2.2mm; }
+.ready ul { list-style: none; display: grid; gap: 1.2mm; }
+.ready li { display: grid; grid-template-columns: 7mm 1fr; gap: 2mm; font-size: 13.5pt; line-height: 1.28; color: var(--ink-2); align-items: start; }
+.ready li .i { font-size: 13pt; color: var(--teal); margin-top: .8mm; }
+.ready li b { color: var(--ink); }
+.roadmap { position: relative; }
+.timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; position: relative; padding-top: 7mm; }
+.timeline::before { content: ""; position: absolute; left: 6.5mm; right: 6.5mm; top: 2.5mm; height: 1mm; background: linear-gradient(90deg, var(--teal) 0 33%, #6f8fe0 33% 66%, transparent 66%), repeating-linear-gradient(90deg, var(--violet-d) 0 2mm, transparent 2mm 4mm); border-radius: 1mm; }
+.tl { position: relative; border-radius: 4mm; padding: 3mm 4mm; }
+.tl::before { content: ""; position: absolute; left: 4mm; top: -7mm; width: 5mm; height: 5mm; border-radius: 99mm; box-sizing: border-box; }
+.tl .k { font-family: "Plex"; font-weight: 700; font-size: 11.5pt; letter-spacing: .14em; display: flex; align-items: center; gap: 1.6mm; }
+.tl p { font-size: 13pt; line-height: 1.3; margin-top: 1mm; color: var(--ink); }
+.tl.now { background: linear-gradient(135deg, var(--teal), #0aa59f); color: #fff; } .tl.now p { color: #effffd; } .tl.now::before { background: var(--teal); box-shadow: 0 0 0 1.2mm #fff, 0 0 3mm var(--cyan); }
+.tl.next { background: #fff; border: .5mm solid #9fb6f0; } .tl.next .k { color: #3d5fc4; } .tl.next::before { background: #fff; border: 1mm solid #6f8fe0; }
+.tl.later { background: transparent; border: .5mm dashed var(--violet-d); } .tl.later .k { color: var(--violet-d); } .tl.later::before { background: var(--ice); border: 1mm dashed var(--violet-d); }
+
+/* ================= FOOTER ================= */
+.footer { flex: 1 0 auto; background: var(--navy); color: var(--on-dark-2); padding-top: 4.4mm; padding-bottom: calc(4mm + var(--b)); display: grid; grid-template-columns: 1fr auto; gap: 8mm; align-items: center; overflow: hidden; }
+.footer::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1.2mm; background: linear-gradient(90deg, var(--violet), var(--cyan) 45%, var(--teal) 70%, var(--amber)); }
+.refs .kicker { color: var(--cyan); margin-bottom: 1.4mm; }
+.refs ol { columns: 3; column-gap: 7mm; padding-left: 5mm; }
+.refs li { font-size: 11.5pt; line-height: 1.28; margin-bottom: .4mm; break-inside: avoid; color: #b5ccd4; }
+.refs li i { color: #e6f2f5; }
+.disc { margin-top: 1.4mm; font-size: 11.5pt; line-height: 1.35; color: #8fadb8; }
+.disc b { color: #fff; }
+.qrs { display: flex; gap: 5mm; }
+.qr { background: #fff; border-radius: 4mm; padding: 2.4mm 2.4mm 2mm; text-align: center; box-shadow: 0 0 0 .8mm rgba(22,198,190,.35), 0 0 6mm rgba(22,198,190,.25); }
+.qr img { width: 30mm; height: 30mm; display: block; }
+.qr span { display: flex; align-items: center; justify-content: center; gap: 1.4mm; margin-top: 1.6mm; font-family: "Plex"; font-weight: 700; font-size: 10.5pt; color: var(--navy); letter-spacing: .06em; }
+.qr span .i { color: var(--teal); font-size: 12pt; }
+</style>
+</head>
+<body>
+<!-- ============ ICON SPRITE (hand-drawn, 24×24 stroke icons) ============ -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2.7s-6 6.6-6 11.3a6 6 0 0 0 12 0C18 9.3 12 2.7 12 2.7z"/></symbol>
+  <symbol id="i-fall" viewBox="0 0 24 24"><circle cx="17.5" cy="4.5" r="2"/><path d="M15 8.5l-5 3.5 3 3.2-1.6 5.8"/><path d="M10 12l-5.5.8M13 15.2l5.5.6"/><path d="M3 21.5h18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-pill" viewBox="0 0 24 24"><path d="M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7z"/><path d="M8.5 8.5l7 7"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="7" width="12" height="10" rx="2"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M19 9h3M19 15h3M2 9h3M2 15h3"/></symbol>
+  <symbol id="i-pose" viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M12 6v7M8 9l4 1 4-1M9 21l3-8 3 8"/></symbol>
+  <symbol id="i-wifioff" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 4.6-2.6M19 12.9a10 10 0 0 0-2.3-1.6M12 20h.01"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H8a6 6 0 1 1 1.3-11.9A7 7 0 0 1 22 12a4 4 0 0 1-4.5 7z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.7"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></symbol>
+  <symbol id="i-button" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2 0 0 0-2.5-1.5c-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2A2.5 2 0 0 1 9.5 15M12 6v1.5M12 16.5V18"/></symbol>
+</svg>
+
+<div class="sheet">
+
+  <!-- ================= HERO ================= -->
+  <header class="hero band">
+    <div class="glow g1"></div><div class="glow g2"></div>
+    <div class="grid-tex"></div><svg class="net" data-net="hero" data-seed="7"></svg>
+    <div class="logos">
+      <div class="utp-wrap"><img class="utp" src="../assets/logos/utp-white.svg" alt="Universiti Teknologi PETRONAS"></div>
+      <div class="event"><b>GRAND FINALE</b> · HEALTHTECH TRACK</div>
+      <div class="cf-wrap"><img class="cf" src="../assets/logos/codefest26-cropped.png" alt="CODEFEST'26 SYNTECH"></div>
+    </div>
+    <div class="hero-grid">
+      <div>
+        <div class="wordmark">Kawan<span>.</span></div>
+        <div class="malay">kawan (Malay) · <i>friend</i></div>
+        <div class="tagline">An AI guardian for people who live alone.</div>
+        <div class="support">It notices, checks in, and alerts family only when needed.</div>
+        <div class="position"><span>Not a doctor.</span><span>Not a surveillance camera.</span><span class="g">A guardian.</span></div>
+        <div class="team">
+          <div class="tn">Team Nexora <small>UTP CODEFEST '26</small></div>
+          <div class="members">Ajmal Haikal bin Mohd Zakhiruddin · Nik Mohamad Fairuz Addailami bin Mohamed Zabedi<br>Muhammad Iyad Mustaqim bin Muhd Gaddafi · Muhammad Zulfiqar bin Zuraimi</div>
+        </div>
+      </div>
+      <div class="guardian">
+        <svg class="art" viewBox="0 0 600 370" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="orb" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#16c6be" stop-opacity=".55"/><stop offset="55%" stop-color="#087f8c" stop-opacity=".18"/><stop offset="100%" stop-color="#087f8c" stop-opacity="0"/></radialGradient>
+            <linearGradient id="ringg" x1="0" x2="1"><stop offset="0%" stop-color="#16c6be"/><stop offset="60%" stop-color="#a99bff"/><stop offset="100%" stop-color="#ffbf69"/></linearGradient>
+          </defs>
+          <!-- smart-home outline -->
+          <path d="M120 360 V170 L300 40 L480 170 V360" fill="none" stroke="#16c6be" stroke-opacity=".38" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M150 360 V185 L300 77 L450 185 V360" fill="none" stroke="#16c6be" stroke-opacity=".16" stroke-width="1.4" stroke-dasharray="4 6"/>
+          <!-- guardian halo -->
+          <circle cx="300" cy="212" r="150" fill="url(#orb)"/>
+          <circle cx="300" cy="212" r="118" fill="none" stroke="url(#ringg)" stroke-width="2.2" stroke-opacity=".9"/>
+          <circle cx="300" cy="212" r="146" fill="none" stroke="#16c6be" stroke-width="1.4" stroke-opacity=".45" stroke-dasharray="2 7"/>
+          <circle cx="300" cy="212" r="176" fill="none" stroke="#a99bff" stroke-width="1.2" stroke-opacity=".3" stroke-dasharray="1 9"/>
+          <!-- signal nodes on the halo -->
+          <circle cx="198" cy="153" r="6" fill="#16c6be"/><circle cx="198" cy="153" r="12" fill="none" stroke="#16c6be" stroke-opacity=".5"/>
+          <circle cx="416" cy="184" r="6" fill="#ffbf69"/><circle cx="416" cy="184" r="12" fill="none" stroke="#ffbf69" stroke-opacity=".5"/>
+          <circle cx="226" cy="306" r="6" fill="#ff7272"/><circle cx="226" cy="306" r="12" fill="none" stroke="#ff7272" stroke-opacity=".5"/>
+          <!-- mascot (real app mascot) -->
+          <image href="../assets/figures/mascot.svg" x="210" y="112" width="180" height="180"/>
+        </svg>
+        <div class="gchip c1"><span class="ic"><svg class="i"><use href="#i-eye"/></svg></span>Notices a fall</div>
+        <div class="gchip c2"><span class="ic"><svg class="i"><use href="#i-chat"/></svg></span>"Are you okay?"</div>
+        <div class="gchip c3"><span class="ic"><svg class="i"><use href="#i-phone"/></svg></span>Alerts caregivers <small>only if needed</small></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 01 PROBLEM + 02 SOLUTION ================= -->
+  <section class="ps band">
+    <div class="glow g3"></div>
+    <div style="position:relative">
+      <div class="sh"><span class="n">01</span><h2>The problem</h2><span class="crit">Impact</span></div>
+      <div class="stats">
+        <div class="stat st-violet"><span class="ic"><svg class="i"><use href="#i-drop"/></svg></span><div><div class="big">15.6<small>%</small></div><p>of Malaysian adults have <b>diabetes</b>, 29.2% hypertension; ~4 in 10 don't know it.<sup class="r">1</sup></p></div></div>
+        <div class="stat st-coral"><span class="ic"><svg class="i"><use href="#i-fall"/></svg></span><div><div class="big">684k</div><p>people die from <b>falls</b> each year; most fatal falls are in over-60s.<sup class="r">2</sup></p></div></div>
+        <div class="stat st-amber"><span class="ic"><svg class="i"><use href="#i-clock"/></svg></span><div><div class="big">80<small>%</small></div><p>of fallers over 90 <b>couldn't get up alone</b>; 30% lay on the floor ≥ 1 hour.<sup class="r">3</sup></p></div></div>
+        <div class="stat st-teal"><span class="ic"><svg class="i"><use href="#i-pill"/></svg></span><div><div class="big">~50<small>%</small></div><p>of long-term patients <b>don't take medicine</b> as prescribed.<sup class="r">4</sup></p></div></div>
+      </div>
+    </div>
+    <div class="solution">
+      <div class="grid-tex"></div>
+      <div class="sh" style="position:relative"><span class="n">02</span><h2>Our solution</h2><span class="crit">Impact · Usability</span></div>
+      <div class="path">
+        <div class="node n1"><span class="ic"><svg class="i"><use href="#i-eye"/></svg></span><div class="tx"><h3><em>01</em>Notice</h3><p>Camera spots falls and unusual stillness; tracks medicines and readings.</p></div></div>
+        <div class="node n2"><span class="ic"><svg class="i"><use href="#i-chat"/></svg></span><div class="tx"><h3><em>02</em>Check in</h3><p>"<b>Are you okay?</b>" by voice, button or chat, in English or Malay.</p></div></div>
+        <div class="node n3"><span class="ic"><svg class="i"><use href="#i-bell"/></svg></span><div class="tx"><h3><em>03</em>Escalate only if needed</h3><p>"Help", a red-flag symptom or <b>no reply in 20 s</b> alerts caregivers.</p></div></div>
+        <div class="node n4"><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><div class="tx"><h3><em>04</em>Explain why</h3><p>Caregivers see <b>why</b>, and what else it could be.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ALARM vs KAWAN ================= -->
+  <section class="versus band">
+    <div class="grid-tex"></div>
+    <div class="vrow old">
+      <div class="vlab"><span class="ic"><svg class="i"><use href="#i-button"/></svg></span><div class="t">Conventional alarm<small>pendant / panic button</small></div></div>
+      <div class="track"><div class="step"><svg class="i"><use href="#i-fall"/></svg>Person falls</div><div class="step"><svg class="i"><use href="#i-button"/></svg>They must press the button</div><div class="step end"><svg class="i"><use href="#i-x"/></svg><span>Hurt or confused: alarm mostly unused<sup class="r">3</sup></span></div></div>
+    </div>
+    <div class="vrow new">
+      <div class="vlab"><span class="ic"><svg class="i"><use href="#i-shield"/></svg></span><div class="t">Kawan<small>no panic button · no wearable</small></div></div>
+      <div class="track"><div class="step"><svg class="i"><use href="#i-cam"/></svg>Webcam notices the fall</div><div class="step"><svg class="i"><use href="#i-chat"/></svg>"Are you okay?"</div><div class="step end"><svg class="i"><use href="#i-check"/></svg>"Help" or no reply in 20 s → caregivers alerted</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 03 HOW IT WORKS ================= -->
+  <section class="tech band dark">
+    <div class="glow g4"></div><div class="glow g5"></div>
+    <div class="grid-tex"></div><svg class="net" data-net="tech" data-seed="21"></svg>
+    <div class="sh" style="position:relative"><span class="n">03</span><h2>How it works</h2><span class="crit">Technical execution</span></div>
+    <div class="tech-grid">
+      <div class="panel diagram">
+        <svg viewBox="0 0 1000 470" font-family="Inter, sans-serif">
+          <defs>
+            <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16c6be"/></marker>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ff7272"/></marker>
+            <filter id="gl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <linearGradient id="hubg" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#0f3a4c"/><stop offset="100%" stop-color="#0a2738"/></linearGradient>
+          </defs>
+          <g font-family="Plex, monospace" font-size="13.5" font-weight="700" letter-spacing="1.6">
+            <text x="15" y="22" fill="#16c6be">BROWSER · ON THE DEVICE</text>
+            <text x="340" y="22" fill="#7ff0dd">KAWAN HUB · PYTHON · SAME PC</text>
+            <text x="772" y="22" fill="#ff9a9a">PEOPLE</text>
+          </g>
+          <!-- browser group -->
+          <rect x="15" y="34" width="282" height="426" rx="16" fill="#0b2e3c" stroke="#16c6be" stroke-opacity=".55" stroke-width="1.6"/>
+          <rect x="30" y="50" width="252" height="98" rx="11" fill="#0e3d4a" stroke="#16c6be" stroke-width="2"/>
+          <text x="46" y="80" font-size="20.5" font-weight="700" fill="#fff">Webcam → MediaPipe</text>
+          <text x="46" y="106" font-size="15" fill="#a9d4d6">pose AI in the browser, 15 fps</text>
+          <text x="46" y="132" font-size="15" fill="#16c6be" font-weight="700">raw video stays in the browser</text>
+          <rect x="30" y="160" width="252" height="60" rx="11" fill="#0e3442" stroke="#235466" stroke-width="1.6"/>
+          <text x="46" y="186" font-size="18.5" font-weight="700" fill="#fff">Voice · buttons · chat</text>
+          <text x="46" y="208" font-size="14.5" fill="#a9c6cc">"Hey Kawan", English / Malay</text>
+          <rect x="30" y="232" width="252" height="60" rx="11" fill="#0e3442" stroke="#235466" stroke-width="1.6"/>
+          <text x="46" y="258" font-size="18.5" font-weight="700" fill="#fff">Readings</text>
+          <text x="46" y="280" font-size="14.5" fill="#a9c6cc">typed in, or posted by a device</text>
+          <rect x="30" y="304" width="252" height="140" rx="11" fill="#087f8c"/>
+          <text x="46" y="334" font-size="18.5" font-weight="700" fill="#fff">Companion screen</text>
+          <text x="46" y="360" font-size="14.5" fill="#d9fffa">speaks every prompt</text>
+          <text x="46" y="383" font-size="14.5" fill="#d9fffa">big "I'm okay" / "Help"</text>
+          <text x="46" y="406" font-size="14.5" fill="#d9fffa">medicine reminders</text>
+          <text x="46" y="429" font-size="14.5" fill="#d9fffa">cited health answers</text>
+          <!-- browser ↔ hub -->
+          <g stroke="#16c6be" stroke-width="3.2" fill="none" filter="url(#gl)">
+            <path d="M284 99 H336" marker-end="url(#ac)"/><path d="M284 190 H336" marker-end="url(#ac)"/><path d="M284 262 H336" marker-end="url(#ac)"/><path d="M338 374 H288" marker-end="url(#ac)"/>
+          </g>
+          <text x="287" y="88" font-size="12" font-family="Plex" fill="#7ff0dd" font-weight="700">33 pts</text>
+          <text x="294" y="364" font-size="12" font-family="Plex" fill="#7ff0dd" font-weight="700">live</text>
+          <!-- hub -->
+          <rect x="340" y="34" width="396" height="426" rx="16" fill="url(#hubg)" stroke="#7ff0dd" stroke-opacity=".35" stroke-width="1.6"/>
+          <g font-size="16" font-weight="600" fill="#e6f6f4">
+            <rect x="356" y="50" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="370" y="78">Fall detector</text>
+            <rect x="544" y="50" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="558" y="78">Inactivity</text>
+            <rect x="356" y="104" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="370" y="132">Vitals monitor</text>
+            <rect x="544" y="104" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="558" y="132">Medicines</text>
+            <rect x="356" y="158" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="370" y="186">Daily check-in</text>
+            <rect x="544" y="158" width="176" height="44" rx="9" fill="#123f50" stroke="#2a6175"/><text x="558" y="186">Chat router</text>
+          </g>
+          <path d="M538 208 V236" stroke="#16c6be" stroke-width="3.2" marker-end="url(#ac)" fill="none" filter="url(#gl)"/>
+          <rect x="356" y="240" width="364" height="128" rx="13" fill="#04121d" stroke="#ff7272" stroke-opacity=".7" stroke-width="1.8"/>
+          <text x="374" y="272" font-size="20.5" font-weight="700" fill="#fff">Safety engine · rules R1–R10</text>
+          <text x="374" y="299" font-size="15.5" fill="#ffd18e">"I'm okay" → low-priority note</text>
+          <text x="374" y="323" font-size="15.5" fill="#ff9a9a">"Help" / no reply in 20 s → ESCALATE</text>
+          <text x="374" y="347" font-size="15.5" fill="#ff9a9a">red-flag symptom → escalate now</text>
+          <rect x="356" y="382" width="364" height="62" rx="11" fill="#1c1a46" stroke="#a99bff" stroke-width="2" stroke-dasharray="7 5"/>
+          <text x="374" y="408" font-size="16.5" font-weight="700" fill="#e4e0ff">Questions only → cited health library</text>
+          <text x="374" y="432" font-size="14" fill="#bdb4ff">104 topics (MOH, WHO, NHS) · optional Claude AI</text>
+          <!-- hub → people -->
+          <path d="M722 304 H768" stroke="#ff7272" stroke-width="3.2" marker-end="url(#ar)" fill="none" filter="url(#gl)"/>
+          <rect x="772" y="34" width="213" height="426" rx="16" fill="#2a1626" stroke="#ff7272" stroke-opacity=".45" stroke-width="1.6"/>
+          <rect x="786" y="50" width="185" height="152" rx="11" fill="#3a1e30" stroke="#5c2f45"/>
+          <text x="802" y="78" font-size="18.5" font-weight="700" fill="#fff">Caregivers</text>
+          <text x="802" y="103" font-size="14.5" fill="#f1cfd6">live dashboard</text>
+          <text x="802" y="126" font-size="14.5" fill="#f1cfd6">alert + reasons</text>
+          <text x="802" y="149" font-size="14.5" fill="#f1cfd6">acknowledge / resolve</text>
+          <text x="802" y="172" font-size="14.5" fill="#f1cfd6">trends &amp; history</text>
+          <rect x="786" y="214" width="185" height="112" rx="11" fill="#d8434a"/>
+          <text x="802" y="243" font-size="18.5" font-weight="700" fill="#fff">Telegram</text>
+          <text x="802" y="268" font-size="14.5" fill="#ffe1e2">escalations to every</text>
+          <text x="802" y="290" font-size="14.5" fill="#ffe1e2">caregiver's phone</text>
+          <text x="802" y="314" font-size="12" font-family="Plex" fill="#fff">optional · internet</text>
+          <rect x="786" y="338" width="185" height="106" rx="11" fill="#3a1e30" stroke="#5c2f45"/>
+          <text x="802" y="366" font-size="18.5" font-weight="700" fill="#fff">Doctor</text>
+          <text x="802" y="391" font-size="14.5" fill="#f1cfd6">printable visit report</text>
+          <text x="802" y="414" font-size="14.5" fill="#f1cfd6">adherence, vitals,</text>
+          <text x="802" y="436" font-size="14.5" fill="#f1cfd6">symptoms, alerts</text>
+        </svg>
+      </div>
+      <div class="panel fallp">
+        <div class="ttl">Fall detection on a <span>recorded fall clip</span></div>
+        <div class="sub">Real MediaPipe skeleton, UR Fall clip fall-04<sup class="r">5</sup> · orange dot = hip centre</div>
+        <img src="../assets/figures/fall-sequence-dark.svg" alt="Skeleton of a recorded fall at four moments">
+        <div class="stages">
+          <div class="stg"><b>1 · Upright</b>start of the sequence</div>
+          <div class="stg"><b>2 · Hips drop fast</b>≥ 0.6 torso lengths in ≤ 1.5 s</div>
+          <div class="stg"><b>3 · Horizontal</b>torso ≥ 60° or out of view</div>
+          <div class="stg"><b>4 · Still down</b>after 2 s → check in</div>
+        </div>
+        <div class="out"><span class="lbl">Kawan's own output for this clip</span><br>Hip dropped 14% of frame (0.6× torso) in 1.3 s · torso 90° · no recovery within 2 s</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 04 THE APP ================= -->
+  <section class="app band">
+    <div class="glow g6"></div><div class="glow g7"></div><div class="grid-tex light"></div>
+    <div class="sh" style="position:relative"><span class="n">04</span><h2>The app</h2><span class="crit">Usability · real screens, demo data</span></div>
+    <div class="showcase">
+      <div>
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span>localhost / caregiver</span></div><img src="../assets/screens/tiles/dashboard.png" style="height:76mm" alt="Caregiver dashboard"></div>
+        <div class="shot-cap"><h3><svg class="i"><use href="#i-users"/></svg>Caregiver dashboard</h3><p>Vitals, medicine adherence, activity pattern, daily check-ins.</p></div>
+      </div>
+      <div>
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span>caregiver · alert</span></div><img src="../assets/screens/tiles/fall-alert.png" style="height:63mm" alt="Fall alert with reasons"></div>
+        <div class="shot-cap"><h3><svg class="i"><use href="#i-alert"/></svg>Fall alert, with reasons</h3><p>Why it fired, what else it could be.</p></div>
+      </div>
+      <div>
+        <div class="phone"><img src="../assets/screens/tiles/phone-bm.png" style="height:73mm" alt="Kawan on a phone in Bahasa Melayu"></div>
+        <div class="shot-cap"><h3><svg class="i"><use href="#i-phone"/></svg>On a phone</h3><p>Bahasa Melayu</p></div>
+      </div>
+      <div class="also">
+        <div>
+          <div class="frame"><div class="bar"><i></i><i></i><i></i><span>localhost / companion</span></div><img src="../assets/screens/tiles/hero-checkin.png" style="height:62mm" alt="Companion check-in"></div>
+          <div class="shot-cap"><h3><svg class="i"><use href="#i-chat"/></svg>Companion check-in</h3><p>Big buttons, spoken prompt, 20 s timer.</p></div>
+        </div>
+        <div class="chips">
+          <span class="kicker" style="color:var(--ink-3);margin-bottom:.6mm">Also built</span>
+          <span class="chip"><svg class="i"><use href="#i-pill"/></svg>Spoken reminders</span>
+          <span class="chip"><svg class="i"><use href="#i-pulse"/></svg>Sustained-reading vitals</span>
+          <span class="chip"><svg class="i"><use href="#i-list"/></svg>Daily check-in triage</span>
+          <span class="chip"><svg class="i"><use href="#i-book"/></svg>104 cited topics, EN &amp; BM</span>
+          <span class="chip"><svg class="i"><use href="#i-doc"/></svg>Doctor report</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 PRIVACY + 06 OFFLINE ================= -->
+  <section class="po band">
+    <div class="privacy">
+      <svg class="i shield"><use href="#i-shield"/></svg>
+      <div class="sh dark" style="position:relative"><span class="n">05</span><h2>Safe &amp; private by design</h2></div>
+      <ul>
+        <li><span class="ic"><svg class="i"><use href="#i-shield"/></svg></span><span><b>Rules decide, AI only explains.</b> Check-in replies never go to the AI.</span></li>
+        <li><span class="ic"><svg class="i"><use href="#i-check"/></svg></span><span><b>Fails safe.</b> "Okay, but my leg hurts" counts as help; unclear replies keep the timer running.</span></li>
+        <li><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><span><b>Explains itself:</b> every alert lists why it fired and what else it could be.</span></li>
+      </ul>
+      <div class="flowline">
+        <div class="kicker">What leaves the browser</div>
+        <div class="fl">
+          <div class="box"><svg class="i"><use href="#i-cam"/></svg><span>Camera video<b>stays in the browser</b></span></div>
+          <div class="arrow"></div>
+          <div class="box hot"><svg class="i"><use href="#i-pose"/></svg><span><b>33 landmarks</b>x, y, visibility · 15/s</span></div>
+          <div class="arrow"></div>
+          <div class="box"><svg class="i"><use href="#i-cpu"/></svg><span>Kawan hub<b>same PC by default</b></span></div>
+        </div>
+        <p>No video or images are sent or stored; the hub keeps only events and summaries. <b>One opt-in exception:</b> "Check my medicine" sends a single photo to Claude when tapped (needs an AI key).</p>
+      </div>
+    </div>
+    <div class="offline">
+      <div class="sh"><span class="n">06</span><h2>Offline &amp; online</h2></div>
+      <div class="oc">
+        <div class="ocol local">
+          <h3><span class="ic"><svg class="i"><use href="#i-wifioff"/></svg></span>Works without internet</h3>
+          <ul>
+            <li>Pose detection, fall &amp; inactivity rules</li>
+            <li>Check-ins by button and chat</li>
+            <li>Spoken prompts <small>(device voices)</small></li>
+            <li>Reminders, vitals, daily check-in</li>
+            <li>104-topic health library</li>
+            <li>Dashboard &amp; report <small>(on the hub PC)</small></li>
+          </ul>
+        </div>
+        <div class="ocol net">
+          <h3><span class="ic"><svg class="i"><use href="#i-cloud"/></svg></span>Needs internet</h3>
+          <ul>
+            <li>Voice input <small>(browser speech service)</small></li>
+            <li>Telegram alerts to phones</li>
+            <li>Claude AI answers &amp; pill check <small>(optional, API key)</small></li>
+            <li>Phones &amp; remote caregivers <small>(secure link)</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 RESULTS ================= -->
+  <section class="results band">
+    <div class="sh"><span class="n">07</span><h2>Results</h2><span class="crit">Technical execution · Usability</span></div>
+    <div class="res-grid">
+      <div class="evalp">
+        <div class="kicker">Preliminary test · fall detector on recorded clips<sup class="r">5</sup></div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" fill="none" stroke="#dbe8ec" stroke-width="3.6"/><circle cx="18" cy="18" r="15.5" fill="none" stroke="#087f8c" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="87.65 97.39"/></svg><div class="v">90%</div></div>
+            <div><div class="big">27<small> / 30</small></div><p><b>fall clips detected.</b> The earlier frame-size rule: 17/30.</p></div>
+          </div>
+          <div class="metric amber">
+            <div><div class="dots" data-dots="40" data-on="13"></div></div>
+            <div><div class="big">13<small> / 40</small></div><p><b>everyday clips triggered a check-in</b>; 11 show people lying down on purpose.</p></div>
+          </div>
+        </div>
+        <div class="meaning"><div class="m ck">A check-in asks the person</div><div class="a">→</div><div class="m">"I'm okay" = low-priority note</div><div class="a">→</div><div class="m esc">Phones alerted only on "help" or no reply</div></div>
+        <p class="cond"><b>Test conditions:</b> UR Fall dataset, 70 lab clips of actors, one room, side-view camera; same pose model and settings as the app; each clip's last frame held 10 s (person stays down).</p>
+        <div class="honest"><svg class="i"><use href="#i-alert"/></svg><span><b>Not real-world accuracy.</b> Preliminary lab testing; not clinically validated.</span></div>
+      </div>
+      <div class="rcol">
+        <div class="tests">
+          <div class="big">148<small>AUTOMATED TESTS</small></div>
+          <div>
+            <div class="stack"><i style="flex:117"></i><i style="flex:19"></i><i style="flex:12"></i></div>
+            <div class="legend"><span style="--c:var(--cyan)">117 backend</span><span style="--c:var(--violet)">19 frontend</span><span style="--c:var(--amber)">12 browser end-to-end</span></div>
+            <p>Run by GitHub Actions on every push.</p>
+          </div>
+        </div>
+        <div class="voices">
+          <div class="kicker">Early informal feedback · 4 testers (3 friends and a parent)</div>
+          <div class="qs">
+            <div class="q">The reminders are the part I'd use every day.</div>
+            <div class="q">I don't need to read anything. I just talk to it and it talks back.</div>
+            <div class="q">It noticed when I fell and asked if I was okay.</div>
+            <div class="q">I asked what ibuprofen is and finally understood it.</div>
+          </div>
+          <div class="heard">
+            <span class="hd">What we heard</span><span></span><span class="hd">What we did / will do</span>
+            <span class="h">Alerts on 2–3 caregivers' phones</span><span class="ar">→</span><span class="d"><b>✓ Done:</b> Telegram to every caregiver</span>
+            <span class="h">Voice sometimes misses words</span><span class="ar">→</span><span class="d">Tap buttons as backup; better speech next</span>
+            <span class="h">Knows less than chatbots</span><span class="ar">→</span><span class="d">Deliberate: cited sources only</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 08 FEASIBILITY ================= -->
+  <section class="feas band">
+    <div class="ready">
+      <div class="sh" style="margin-bottom:2mm"><span class="n">08</span><h2 style="font-size:22pt">Feasibility</h2></div>
+      <ul>
+        <li><svg class="i"><use href="#i-laptop"/></svg><span><b>Hardware:</b> a laptop or tablet with a webcam + Chrome/Edge.</span></li>
+        <li><svg class="i"><use href="#i-coin"/></svg><span><b>Cost:</b> free open-source stack; AI and Telegram optional.</span></li>
+        <li><svg class="i"><use href="#i-terminal"/></svg><span><b>Setup:</b> one command; a secure link for phones.</span></li>
+      </ul>
+    </div>
+    <div class="roadmap">
+      <h3 style="margin-top:.5mm">Roadmap &amp; next steps</h3>
+      <div class="timeline">
+        <div class="tl now"><div class="k"><svg class="i"><use href="#i-check"/></svg>NOW</div><p>Working prototype; tried by 4 early users.</p></div>
+        <div class="tl next"><div class="k">NEXT</div><p>Caregiver login · hosted multi-household version · push alerts · device integration.</p></div>
+        <div class="tl later"><div class="k">LATER</div><p>Clinical validation with healthcare partners · more emergency types.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer band">
+    <div class="refs">
+      <div class="kicker">References</div>
+      <ol>
+        <li>IPH, MOH Malaysia. <i>NHMS 2023: NCD Fact Sheet.</i> 2024.</li>
+        <li>WHO. <i>Falls — Fact sheet.</i> 2021.</li>
+        <li>Fleming J, Brayne C. Inability to get up after falling (people over 90). <i>BMJ</i> 2008;337:a2227.</li>
+        <li>WHO. <i>Adherence to Long-Term Therapies.</i> 2003.</li>
+        <li>Kwolek B, Kepski M. <i>Comput Methods Programs Biomed</i> 2014;117:489–501 (UR Fall dataset, CC BY-NC-SA 4.0).</li>
+        <li>Google. <i>MediaPipe Pose Landmarker.</i></li>
+      </ol>
+      <p class="disc"><b>Prototype — not a medical device. In an emergency call 999.</b> One camera, one person in view. Health library from MOH Malaysia CPGs, WHO and NHS. Built with help from Claude Code (AI coding assistant), as the rules require us to disclose.</p>
+    </div>
+    <div class="qrs">
+      <div class="qr"><img src="../assets/qr/video.svg" alt="QR: demo video"><span><svg class="i"><use href="#i-play"/></svg>DEMO VIDEO</span></div>
+      <div class="qr"><img src="../assets/qr/github.svg" alt="QR: GitHub repository"><span><svg class="i"><use href="#i-code"/></svg>SOURCE CODE</span></div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get('bleed')) document.documentElement.style.setProperty('--b', q.get('bleed') + 'mm');
+  if (q.get('v') === 'day') document.body.classList.add('day');
+
+  // dot matrices for result counts (honest: one dot per clip)
+  for (const el of document.querySelectorAll('[data-dots]')) {
+    const n = +el.dataset.dots, on = +el.dataset.on
+    el.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')
+  }
+
+  // connected-node network texture (deterministic, seeded)
+  function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647 }
+  for (const svg of document.querySelectorAll('svg.net')) {
+    const r = rng(+svg.dataset.seed), box = svg.getBoundingClientRect(), W = box.width, H = box.height
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
+    const pts = Array.from({ length: Math.round(W * H / 5200) }, () => [r() * W, r() * H])
+    const day = document.body.classList.contains('day') && svg.dataset.net === 'hero'
+    const col = day ? '8,127,140' : '22,198,190'
+    let out = ''
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1])
+      if (d < 70) out += `<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[j][0]}" y2="${pts[j][1]}" stroke="rgba(${col},${(0.16 * (1 - d / 70)).toFixed(3)})" stroke-width="0.8"/>`
+    }
+    for (const [x, y] of pts) out += `<circle cx="${x}" cy="${y}" r="${(1 + r() * 1.6).toFixed(1)}" fill="rgba(${col},${(0.18 + r() * 0.25).toFixed(2)})"/>`
+    svg.innerHTML = out
+  }
+</script>
+</body>
+</html>
