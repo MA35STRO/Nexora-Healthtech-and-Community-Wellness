@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kawan Poster</title>
+<style>
+/* ======================================================================
+   Kawan — A1 portrait poster (594 × 841 mm). Text comes from CONTENT.md.
+   Build PDF/PNG with:  node poster/build.mjs        (see poster/README.md)
+   ?bleed=3 in the URL adds 3 mm bleed on every side for print shops.
+   ====================================================================== */
+@font-face { font-family: "Sora"; src: url("assets/fonts/Sora.ttf") format("truetype"); font-weight: 100 800; }
+@font-face { font-family: "Jakarta"; src: url("assets/fonts/PlusJakartaSans.ttf") format("truetype"); font-weight: 200 800; }
+@font-face { font-family: "Mono"; src: url("assets/fonts/JetBrainsMono.ttf") format("truetype"); font-weight: 100 800; }
+
+:root {
+  --b: 0mm;                 /* bleed (set by ?bleed=3) */
+  --ink: #0b1a24;           /* deep navy: header, headings */
+  --ink-2: #3a5260;         /* body text */
+  --ink-3: #647a84;         /* captions */
+  --paper: #f5f3ed;         /* warm off-white, matches the app background */
+  --card: #ffffff;
+  --line: #dde3df;
+  --teal: #12897c;          /* Kawan brand */
+  --teal-2: #2fb8a8;
+  --mint: #5fe0c8;
+  --lime: #b5e04a;          /* from the CodeFest '26 logo */
+  --cyan: #1fb5c9;
+  --amber: #e0901c;         /* check-in */
+  --red: #d64045;           /* escalate */
+  --green: #2e9a5c;         /* okay */
+  --tint: #e6f4f1;
+}
+@page { size: calc(594mm + 2 * var(--b)) calc(841mm + 2 * var(--b)); margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #8a949a; }
+body { font-family: "Jakarta", sans-serif; color: var(--ink-2); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media print { html, body { background: none; } }
+
+.sheet {
+  width: calc(594mm + 2 * var(--b)); height: calc(841mm + 2 * var(--b));
+  background: var(--paper); position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+b, strong { color: var(--ink); font-weight: 750; }
+sup.ref { font-family: "Mono"; font-size: .58em; color: var(--teal); font-weight: 700; vertical-align: super; line-height: 0; }
+.card { background: var(--card); border-radius: 4.5mm; border: .45mm solid var(--line); }
+.small { font-size: 12pt; line-height: 1.38; color: var(--ink-3); }
+
+/* ---------- header ---------- */
+.header {
+  background: var(--ink); color: #e9f3f1; position: relative;
+  padding: calc(9mm + var(--b)) calc(20mm + var(--b)) 9mm;
+}
+.header::after { /* thin lime → cyan rule, echoing the CodeFest logo */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2mm;
+  background: linear-gradient(90deg, var(--lime), var(--teal-2) 55%, var(--cyan));
+}
+.logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5mm; }
+.logos .utp { height: 15mm; }
+.logos .cf { height: 31mm; mix-blend-mode: screen; margin: -4mm 0; }
+.logos .event { font-family: "Mono"; font-size: 14pt; letter-spacing: .16em; color: #9fb8bf; text-transform: uppercase; }
+.logos .event b { color: var(--lime); font-weight: 700; }
+
+.hero { display: grid; grid-template-columns: 1fr 146mm; gap: 12mm; align-items: center; }
+.title { font-family: "Sora"; font-weight: 750; font-size: 96pt; line-height: .88; letter-spacing: -.035em; color: #fff; }
+.title .dot { color: var(--mint); }
+.malay { font-family: "Mono"; font-size: 13pt; color: var(--mint); letter-spacing: .08em; margin: 2mm 0 3mm; }
+.subtitle { font-family: "Sora"; font-weight: 500; font-size: 23pt; line-height: 1.22; color: #fff; text-wrap: balance; max-width: 300mm; }
+.tagline { margin-top: 4mm; font-size: 19pt; font-weight: 600; color: #bfe9e1; }
+.tagline span { color: #fff; }
+.team { margin-top: 4mm; display: flex; gap: 5mm; align-items: baseline; }
+.team .name { font-family: "Sora"; font-weight: 700; font-size: 19pt; color: var(--lime); }
+.team .track { font-family: "Mono"; font-size: 12pt; color: #9fb8bf; letter-spacing: .08em; }
+.members { margin-top: 1.5mm; font-size: 13pt; color: #c9d8dc; line-height: 1.5; }
+
+.hero-shot { border-radius: 6mm; overflow: hidden; background: #fffdf8; position: relative; }
+.hero-shot img { display: block; width: 100%; }
+.hero-shot figcaption { padding: 2.2mm 4.5mm 2.4mm; font-size: 11pt; color: #cfe3e0; background: #10293a; }
+
+/* ---------- content ---------- */
+.content { flex: 1; padding: 7mm calc(20mm + var(--b)) 0; display: flex; flex-direction: column; justify-content: space-between; }
+.row { display: grid; gap: 7mm; }
+.sec-head { display: flex; align-items: baseline; gap: 3.5mm; margin-bottom: 3.2mm; }
+.sec-head .num { font-family: "Mono"; font-weight: 700; font-size: 15pt; color: var(--teal); }
+.sec-head h2 { font-family: "Sora"; font-weight: 700; font-size: 28pt; color: var(--ink); letter-spacing: -.01em; }
+.sec-head .crit { margin-left: auto; font-family: "Mono"; font-size: 10.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: .45mm solid var(--line); border-radius: 99mm; padding: .8mm 3mm; }
+.lead { font-family: "Sora"; font-weight: 600; font-size: 16.5pt; color: var(--ink); line-height: 1.25; margin-bottom: 2.6mm; }
+
+/* problem */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.stat { padding: 3.4mm 4.4mm; }
+.stat .big { font-family: "Sora"; font-weight: 750; font-size: 34pt; line-height: 1; color: var(--ink); letter-spacing: -.02em; }
+.stat .big small { font-size: .5em; font-weight: 700; color: var(--teal); }
+.stat p { margin-top: 1.4mm; font-size: 13pt; line-height: 1.33; }
+.stat.hl { background: var(--ink); border-color: var(--ink); }
+.stat.hl .big, .stat.hl b { color: #fff; }
+.stat.hl p { color: #c6d6da; }
+.stat.hl .big small { color: var(--mint); }
+.callout { margin-top: 3.4mm; padding: 2.8mm 4.6mm; border-left: 2mm solid var(--amber); background: #fbf1e1; border-radius: 0 4mm 4mm 0; font-size: 13.5pt; line-height: 1.34; color: var(--ink); }
+
+/* solution */
+.flow { display: grid; gap: 3.6mm; }
+.fstep { display: grid; grid-template-columns: 12mm 1fr; gap: 4mm; align-items: center; background: var(--card); border: .45mm solid var(--line); border-radius: 4.5mm; padding: 3mm 4.5mm 3mm 3.5mm; position: relative; }
+.fstep:not(:last-child)::after { content: ""; position: absolute; left: 8.9mm; bottom: -3.7mm; border-top: 3.2mm solid var(--teal); border-left: 2.6mm solid transparent; border-right: 2.6mm solid transparent; z-index: 2; }
+.fstep .ic { width: 12mm; height: 12mm; border-radius: 99mm; display: grid; place-items: center; font-family: "Mono"; font-weight: 800; font-size: 15pt; color: #fff; }
+.fstep h3 { font-family: "Sora"; font-weight: 750; font-size: 18pt; color: var(--ink); line-height: 1.15; }
+.fstep p { font-size: 13.5pt; line-height: 1.32; margin-top: .5mm; }
+.f1 .ic { background: var(--teal-2); } .f2 .ic { background: var(--amber); } .f3 .ic { background: var(--red); } .f4 .ic { background: var(--ink); }
+.pills { display: flex; gap: 2.2mm; flex-wrap: wrap; margin-top: 3.4mm; }
+.pill { font-size: 12.5pt; font-weight: 650; color: var(--teal); background: var(--tint); border-radius: 99mm; padding: 1.1mm 4mm; }
+
+/* how it works */
+.diagram { padding: 3mm 4mm; display: flex; align-items: center; }
+.diagram svg { width: 100%; display: block; }
+.fall { padding: 4.2mm 5mm; display: flex; flex-direction: column; }
+.fall .lead { font-size: 16.5pt; margin-bottom: 2mm; }
+.fall img { width: 100%; display: block; margin: 0 0 2.6mm; }
+.rule { display: grid; grid-template-columns: auto 1fr; gap: 1.1mm 2.8mm; margin-bottom: 2.4mm; }
+.rule .n { font-family: "Mono"; font-weight: 700; font-size: 11.5pt; color: #fff; background: var(--teal); border-radius: 99mm; width: 6.4mm; height: 6.4mm; display: grid; place-items: center; }
+.rule div { font-size: 13pt; line-height: 1.3; align-self: center; }
+.out { background: var(--ink); color: #cfe3e0; border-radius: 3.2mm; padding: 3mm 4mm; font-family: "Mono"; font-size: 10.8pt; line-height: 1.48; }
+.out .lbl { color: var(--mint); font-weight: 700; }
+
+/* features: real screenshot on the left, text on the right */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4.5mm; }
+.feat { overflow: hidden; display: grid; grid-template-columns: 52% 1fr; }
+.feat .shot { background: #f1eee7; border-right: .45mm solid var(--line); padding: 2mm; display: flex; align-items: center; justify-content: center; height: 53mm; }
+.feat .shot img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 2mm; }
+.feat .txt { padding: 3.4mm 4mm; display: flex; flex-direction: column; justify-content: center; }
+.feat h3 { font-family: "Sora"; font-weight: 700; font-size: 15.5pt; color: var(--ink); line-height: 1.18; margin-bottom: 1.4mm; }
+.feat p { font-size: 12pt; line-height: 1.32; }
+
+/* safety */
+.safety { padding: 4.6mm 5.5mm; background: var(--ink); border-color: var(--ink); display: flex; flex-direction: column; }
+.safety .sec-head h2 { color: #fff; }
+.safety .sec-head .num { color: var(--mint); }
+.safety ul { list-style: none; display: grid; gap: 3.4mm; flex: 1; align-content: space-evenly; }
+.safety li { font-size: 14pt; line-height: 1.34; color: #c6d6da; padding-left: 6.5mm; position: relative; }
+.safety li::before { content: ""; position: absolute; left: 0; top: 2.2mm; width: 3mm; height: 3mm; border-radius: 1mm; background: var(--mint); }
+.safety li b { color: #fff; }
+.safety .quote { margin-top: 3.6mm; padding-top: 3mm; border-top: .45mm solid #234050; font-family: "Mono"; font-size: 11.5pt; color: var(--lime); }
+
+/* results */
+.results { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.metric { padding: 3.2mm 4.4mm; }
+.label { font-family: "Mono"; font-size: 10.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.metric .big { font-family: "Sora"; font-weight: 750; font-size: 30pt; color: var(--ink); line-height: 1; margin: 1.2mm 0 1.2mm; }
+.metric .big small { font-size: .4em; color: var(--ink-3); font-weight: 600; }
+.metric .cap { font-size: 12pt; line-height: 1.34; }
+.pending, .pending b { color: var(--amber) !important; }
+.quotes { padding: 3.2mm 4.4mm; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 2.2mm 6mm; }
+.quotes .label { grid-column: 1 / -1; }
+.q { font-size: 12.5pt; line-height: 1.3; color: var(--ink); padding-left: 4.5mm; border-left: 1.1mm solid var(--teal-2); font-style: italic; }
+table.heard { grid-column: 1 / -1; width: 100%; border-collapse: collapse; margin-top: 1mm; }
+table.heard th { text-align: left; font-family: "Mono"; font-size: 10pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 1.6mm 3mm 1mm 0; font-weight: 600; }
+table.heard td { font-size: 11.5pt; line-height: 1.26; padding: 1.2mm 3mm 1.2mm 0; border-top: .45mm solid var(--line); vertical-align: top; }
+table.heard td:first-child { color: var(--ink); width: 42%; }
+.done { color: var(--green); font-weight: 750; }
+
+/* feasibility */
+.feas { display: grid; grid-template-columns: 1.05fr 1.4fr .85fr; gap: 4.5mm; }
+.feas .card { padding: 3.8mm 4.8mm; }
+.feas h3 { font-family: "Sora"; font-weight: 700; font-size: 15.5pt; color: var(--ink); margin-bottom: 1.8mm; }
+.feas ul { list-style: none; display: grid; gap: 1.4mm; }
+.feas li { font-size: 12.5pt; line-height: 1.32; }
+.road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.road .stage { border-radius: 3.2mm; padding: 2.8mm 3.4mm; background: var(--tint); }
+.road .stage:nth-child(2) { background: #eef3fa; }
+.road .stage:nth-child(3) { background: #f3f0e8; }
+.road .k { font-family: "Mono"; font-weight: 700; font-size: 11.5pt; letter-spacing: .1em; color: var(--teal); }
+.road .stage:nth-child(2) .k { color: #3d6fb5; }
+.road .stage:nth-child(3) .k { color: #8a6d2c; }
+.road p { font-size: 12pt; line-height: 1.3; margin-top: .8mm; }
+.limits { background: #fbf1e1 !important; border-color: #f0dcbc !important; }
+
+/* ---------- footer ---------- */
+.footer {
+  margin-top: 6mm; background: var(--ink); color: #b7c9ce;
+  padding: 4.2mm calc(20mm + var(--b)) calc(4.2mm + var(--b));
+  display: grid; grid-template-columns: 1fr auto; gap: 9mm; align-items: center;
+}
+.refs h4 { font-family: "Mono"; font-size: 10.5pt; letter-spacing: .12em; color: var(--mint); margin-bottom: 1.4mm; }
+.refs ol { columns: 2; column-gap: 8mm; padding-left: 5mm; }
+.refs li { font-size: 10pt; line-height: 1.34; margin-bottom: .6mm; break-inside: avoid; }
+.refs li i { color: #dce8ea; }
+.disclaimer { margin-top: 2mm; font-size: 10.5pt; color: #8fa6ad; }
+.disclaimer b { color: #fff; }
+.qrs { display: flex; gap: 5mm; }
+.qr { text-align: center; }
+.qr .box { background: #fff; padding: 2.2mm; border-radius: 2.6mm; width: 31mm; height: 31mm; }
+.qr img { width: 100%; height: 100%; display: block; }
+.qr span { display: block; margin-top: 1.6mm; font-family: "Mono"; font-size: 10.5pt; color: #fff; font-weight: 700; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- ================= HEADER ================= -->
+  <header class="header">
+    <div class="logos">
+      <img class="utp" src="assets/logos/utp-white.svg" alt="Universiti Teknologi PETRONAS">
+      <div class="event"><b>Grand Finale</b> · HealthTech track</div>
+      <img class="cf" src="assets/logos/codefest26-cropped.png" alt="CODEFEST'26 SYNTECH">
+    </div>
+    <div class="hero">
+      <div>
+        <h1 class="title">Kawan<span class="dot">.</span></h1>
+        <div class="malay">kawan (Malay) · <i>friend</i></div>
+        <p class="subtitle">An AI guardian for people who live alone: it notices, checks in, and alerts family only when needed.</p>
+        <p class="tagline">Not a doctor. Not a surveillance camera. <span>A guardian.</span></p>
+        <div class="team"><span class="name">Team Nexora</span><span class="track">UTP CODEFEST '26</span></div>
+        <div class="members">Ajmal Haikal bin Mohd Zakhiruddin · Nik Mohamad Fairuz Addailami bin Mohamed Zabedi<br>Muhammad Iyad Mustaqim bin Muhd Gaddafi · Muhammad Zulfiqar bin Zuraimi</div>
+      </div>
+      <!-- PHOTO SLOT: swap to assets/photos/kawan-in-use.jpg (and update the caption) when the team photo arrives -->
+      <figure class="hero-shot">
+        <img src="assets/screens/tiles/hero-checkin.png" alt="Kawan asking 'Are you okay?' after a possible fall">
+        <figcaption>Real app screen: Kawan checks in after a possible fall (simulated scenario)</figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ================= 01 PROBLEM + 02 SOLUTION ================= -->
+    <div class="row" style="grid-template-columns: 1.22fr 1fr; gap: 8mm;">
+      <section>
+        <div class="sec-head"><span class="num">01</span><h2>The problem</h2><span class="crit">Impact</span></div>
+        <p class="lead">Living alone with an illness is risky; help often arrives too late.</p>
+        <div class="stats">
+          <div class="card stat"><div class="big">15.6<small>%</small></div><p>of Malaysian adults have <b>diabetes</b> and <b>29.2%</b> hypertension; about 4 in 10 of them don't know it.<sup class="ref">1</sup></p></div>
+          <div class="card stat"><div class="big">684k</div><p>people die from <b>falls</b> every year. Adults over 60 suffer the most fatal falls.<sup class="ref">2</sup></p></div>
+          <div class="card stat hl"><div class="big">80<small>%</small></div><p>of fallers over 90 <b>could not get up alone</b>; 30% lay on the floor for an hour or more. <b>Call alarms mostly went unused.</b><sup class="ref">3</sup></p></div>
+          <div class="card stat"><div class="big">~50<small>%</small></div><p>of patients with long-term illness <b>don't take their medicine</b> as prescribed.<sup class="ref">4</sup></p></div>
+        </div>
+        <div class="callout">Today's tools wait for the person to <b>press a button or read a chart</b>. After a fall, in confusion, or when a dose is forgotten, that is exactly when they can't.</div>
+      </section>
+      <section>
+        <div class="sec-head"><span class="num">02</span><h2>Our solution</h2><span class="crit">Impact · Usability</span></div>
+                <div class="flow">
+          <div class="fstep f1"><span class="ic">1</span><div><h3>Notice</h3><p>The device's own camera spots falls and unusual stillness; medicines and readings are tracked.</p></div></div>
+          <div class="fstep f2"><span class="ic">2</span><div><h3>Check in</h3><p>"<b>Are you okay?</b>" by voice, button or chat, in English or Bahasa Melayu.</p></div></div>
+          <div class="fstep f3"><span class="ic">3</span><div><h3>Escalate only if needed</h3><p>"Help", a red-flag symptom, or <b>no reply in 20 s</b> alerts every caregiver.</p></div></div>
+          <div class="fstep f4"><span class="ic">4</span><div><h3>Explain why</h3><p>Caregivers see <b>why</b> Kawan is worried, and what else it could be.</p></div></div>
+        </div>
+        <div class="pills"><span class="pill">No wearables</span><span class="pill">No button to press</span><span class="pill">Works offline</span><span class="pill">English · Bahasa Melayu</span></div>
+      </section>
+    </div>
+
+    <!-- ================= 03 HOW IT WORKS ================= -->
+    <section>
+      <div class="sec-head"><span class="num">03</span><h2>How it works</h2><span class="crit">Technical execution</span></div>
+      <div class="row" style="grid-template-columns: 1.32fr 1fr; gap: 5mm;">
+        <div class="card diagram">
+          <svg viewBox="0 0 1000 470" font-family="Jakarta, sans-serif">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#12897c"/></marker>
+              <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d64045"/></marker>
+            </defs>
+            <g font-family="Mono, monospace" font-size="14" font-weight="700" letter-spacing="1.4" fill="#647a84">
+              <text x="15" y="24">ON THE DEVICE (BROWSER)</text>
+              <text x="340" y="24">KAWAN HUB (PYTHON · FASTAPI)</text>
+              <text x="770" y="24">PEOPLE</text>
+            </g>
+            <!-- device -->
+            <rect x="15" y="36" width="280" height="424" rx="16" fill="#e6f4f1"/>
+            <rect x="30" y="52" width="250" height="98" rx="11" fill="#fff" stroke="#2fb8a8" stroke-width="2.5"/>
+            <text x="46" y="82" font-size="21" font-weight="750" fill="#0b1a24">Webcam → MediaPipe</text>
+            <text x="46" y="108" font-size="15.5" fill="#3a5260">on-device pose AI, 15 frames/s</text>
+            <text x="46" y="134" font-size="15.5" fill="#12897c" font-weight="750">video never leaves the device</text>
+            <rect x="30" y="162" width="250" height="60" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
+            <text x="46" y="188" font-size="19" font-weight="750" fill="#0b1a24">Voice · buttons · chat</text>
+            <text x="46" y="210" font-size="14.5" fill="#3a5260">"Hey Kawan", English / Malay</text>
+            <rect x="30" y="234" width="250" height="60" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
+            <text x="46" y="260" font-size="19" font-weight="750" fill="#0b1a24">Readings</text>
+            <text x="46" y="282" font-size="14.5" fill="#3a5260">BP, SpO₂, temperature, devices</text>
+            <rect x="30" y="306" width="250" height="140" rx="11" fill="#0b1a24"/>
+            <text x="46" y="336" font-size="19" font-weight="750" fill="#fff">Companion screen</text>
+            <text x="46" y="362" font-size="14.5" fill="#9fe8da">speaks every prompt</text>
+            <text x="46" y="385" font-size="14.5" fill="#9fe8da">big "I'm okay" / "Help"</text>
+            <text x="46" y="408" font-size="14.5" fill="#9fe8da">medicine reminders</text>
+            <text x="46" y="431" font-size="14.5" fill="#9fe8da">cited health answers</text>
+            <!-- device ↔ hub -->
+            <path d="M282 101 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
+            <text x="288" y="91" font-size="12.5" font-family="Mono" fill="#12897c" font-weight="700">33 pts</text>
+            <path d="M282 192 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
+            <path d="M282 264 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
+            <path d="M338 376 H286" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
+            <text x="292" y="366" font-size="12.5" font-family="Mono" fill="#12897c" font-weight="700">live</text>
+            <!-- hub -->
+            <rect x="340" y="36" width="395" height="424" rx="16" fill="#f5f3ed" stroke="#dde3df" stroke-width="2"/>
+            <g font-size="16.5" font-weight="700" fill="#0b1a24">
+              <rect x="356" y="52" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="370" y="80">Fall detector</text>
+              <rect x="544" y="52" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="558" y="80">Inactivity</text>
+              <rect x="356" y="106" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="370" y="134">Vitals monitor</text>
+              <rect x="544" y="106" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="558" y="134">Medicines</text>
+              <rect x="356" y="160" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="370" y="188">Daily check-in</text>
+              <rect x="544" y="160" width="176" height="44" rx="9" fill="#fff" stroke="#dde3df" stroke-width="2"/><text x="558" y="188">Chat router</text>
+            </g>
+            <path d="M538 210 V238" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
+            <rect x="356" y="242" width="364" height="128" rx="13" fill="#0b1a24"/>
+            <text x="374" y="274" font-size="21" font-weight="750" fill="#fff">Safety engine · rules R1–R10</text>
+            <text x="374" y="301" font-size="15.5" fill="#f2c27a">"I'm okay" → low-priority note</text>
+            <text x="374" y="325" font-size="15.5" fill="#ff9a9d">"Help" / no reply in 20 s → ESCALATE</text>
+            <text x="374" y="349" font-size="15.5" fill="#ff9a9d">red-flag symptom → escalate now</text>
+            <rect x="356" y="384" width="364" height="62" rx="11" fill="#fff" stroke="#b5e04a" stroke-width="2.5" stroke-dasharray="7 5"/>
+            <text x="374" y="410" font-size="16.5" font-weight="750" fill="#0b1a24">Questions only → cited health library</text>
+            <text x="374" y="434" font-size="14" fill="#3a5260">104 topics (MOH, WHO, NHS) · optional Claude AI</text>
+            <!-- hub → people -->
+            <path d="M722 306 H766" stroke="#d64045" stroke-width="3.5" marker-end="url(#ahr)" fill="none"/>
+            <rect x="770" y="36" width="215" height="424" rx="16" fill="#fbecec"/>
+            <rect x="784" y="52" width="187" height="152" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
+            <text x="800" y="80" font-size="19" font-weight="750" fill="#0b1a24">Caregivers</text>
+            <text x="800" y="105" font-size="14.5" fill="#3a5260">live dashboard</text>
+            <text x="800" y="128" font-size="14.5" fill="#3a5260">alert + reasons</text>
+            <text x="800" y="151" font-size="14.5" fill="#3a5260">acknowledge / resolve</text>
+            <text x="800" y="174" font-size="14.5" fill="#3a5260">trends &amp; history</text>
+            <rect x="784" y="216" width="187" height="112" rx="11" fill="#d64045"/>
+            <text x="800" y="245" font-size="19" font-weight="750" fill="#fff">Telegram</text>
+            <text x="800" y="270" font-size="14.5" fill="#ffe1e2">alerts on every</text>
+            <text x="800" y="292" font-size="14.5" fill="#ffe1e2">caregiver's phone</text>
+            <text x="800" y="316" font-size="12" font-family="Mono" fill="#fff">optional</text>
+            <rect x="784" y="340" width="187" height="106" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
+            <text x="800" y="368" font-size="19" font-weight="750" fill="#0b1a24">Doctor</text>
+            <text x="800" y="393" font-size="14.5" fill="#3a5260">printable visit report</text>
+            <text x="800" y="416" font-size="14.5" fill="#3a5260">adherence, vitals,</text>
+            <text x="800" y="438" font-size="14.5" fill="#3a5260">symptoms, alerts</text>
+          </svg>
+        </div>
+        <div class="card fall">
+          <div class="lead">Fall detection on a <span style="color:var(--teal)">real fall video</span></div>
+          <img src="assets/figures/fall-sequence.svg" alt="MediaPipe skeleton of a real fall at four moments">
+          <div class="rule">
+            <span class="n">1</span><div><b>Upright</b>, then</div>
+            <span class="n">2</span><div><b>hips drop fast:</b> ≥ 0.6 of their own torso length in ≤ 1.5 s (works near or far)</div>
+            <span class="n">3</span><div><b>body horizontal</b> (≥ 60°) or out of view</div>
+            <span class="n">4</span><div><b>still down</b> after 2 s → check in</div>
+          </div>
+          <div class="out"><span class="lbl">Kawan's own output for this clip:</span><br>Hip dropped 14% of frame (0.6× torso) in 1.3 s · torso 90° · no recovery within 2 s</div>
+          <p class="small" style="margin-top:1.6mm">Skeleton extracted from UR Fall clip fall-04.<sup class="ref">5</sup></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 04 FEATURES ================= -->
+    <section>
+      <div class="sec-head"><span class="num">04</span><h2>Key features</h2><span class="crit">Usability · real app screens</span></div>
+      <div class="features">
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/fall-alert.png" alt="Caregiver alert with reasons"></div><div class="txt"><h3>Fall &amp; inactivity detection</h3><p>Every alert lists its reasons and "what else it could be". Inactivity is judged against this person's normal.</p></div></div>
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/phone-bm.png" alt="Kawan on a phone in Bahasa Melayu"></div><div class="txt"><h3>Check in, in English or Malay</h3><p>Big buttons, spoken prompts, "Hey Kawan" voice. Here on a phone: chest pain reported in Malay → "call 999", caregiver alerted.</p></div></div>
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/adherence.png" alt="Medication adherence chart"></div><div class="txt"><h3>Medicine reminders</h3><p>Spoken reminders, one tap for "I took it", missed-dose notice to caregivers, adherence chart.</p></div></div>
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/vitals.png" alt="Live vital signs chart"></div><div class="txt"><h3>Vitals &amp; daily check-in</h3><p>Alerts need sustained readings. Check-ins give non-diagnostic triage: self-care → see a doctor → call 999.</p></div></div>
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/answer.png" alt="Health answer with its NHS source"></div><div class="txt"><h3>Health answers with sources</h3><p>104 topics from MOH Malaysia guidelines, WHO and NHS. The source is shown under every answer.</p></div></div>
+        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/checkins.png" alt="Daily check-in trends"></div><div class="txt"><h3>Caregiver dashboard &amp; trends</h3><p>Live status, timeline, mood/pain/sleep trends, alerts to several caregivers' phones, doctor report.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ================= 05 SAFETY + 06 RESULTS ================= -->
+    <div class="row" style="grid-template-columns: 0.98fr 2.02fr; gap: 5.5mm;">
+      <section class="card safety">
+        <div class="sec-head"><span class="num">05</span><h2>Safe by design</h2></div>
+        <ul>
+          <li><b>Rules decide, AI only explains.</b> The AI never sees a check-in reply.</li>
+          <li><b>Fails safe.</b> Unclear replies keep the timer running.</li>
+          <li><b>Explains itself:</b> why it fired and what else it could be.</li>
+          <li><b>Private &amp; offline:</b> only 33 body points leave the camera, no images are stored, and the core works without internet.</li>
+          <li><b>Honest data:</b> nothing invented; demo data is labelled SIMULATED.</li>
+        </ul>
+        <div class="quote">"Okay, but my leg hurts" → counts as HELP</div>
+      </section>
+
+      <section>
+        <div class="sec-head"><span class="num">06</span><h2>Results</h2><span class="crit">Technical execution · Usability</span></div>
+        <div class="results">
+          <div class="card metric">
+            <div class="label">Fall detection · real videos<sup class="ref">5</sup></div>
+            <div class="big">27<small> / 30 real falls caught (90%)</small></div>
+            <div class="cap">The earlier frame-size rule caught 17/30. 13 of 40 everyday clips triggered a check-in, 11 of them people lying down on purpose: that's why Kawan <b>asks first</b>.</div>
+          </div>
+          <div class="card metric">
+            <div class="label">Engineering quality</div>
+            <div class="big">148<small> automated tests</small></div>
+            <div class="cap">117 backend · 19 frontend · 12 browser end-to-end, run by GitHub Actions on every push. Open source (MIT).</div>
+          </div>
+          <div class="card quotes">
+            <div class="label">Early informal feedback · 4 testers (3 friends and a parent)</div>
+            <div class="q">"The reminders are the part I'd use every day."</div>
+            <div class="q">"I don't need to read anything. I just talk to it and it talks back."</div>
+            <div class="q">"It noticed when I fell and asked if I was okay. That's reassuring when no one's home."</div>
+            <div class="q">"I asked what ibuprofen is and how it works, and finally understood it."</div>
+            <table class="heard">
+              <tr><th>What we heard</th><th>What we did / will do</th></tr>
+              <tr><td>2–3 caregivers want alerts on their phones</td><td><span class="done">✓ Done:</span> Telegram alerts go to every caregiver</td></tr>
+              <tr><td>Voice sometimes doesn't catch what's said</td><td>Big tap buttons as backup now; better speech recognition next</td></tr>
+              <tr><td>It knows less than general chatbots</td><td>Deliberate: cited sources only, so it can't invent medical facts</td></tr>
+              <tr><td>Cover emergencies beyond falls</td><td>Already alerts on red-flag symptoms and abnormal vitals; more planned</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= 07 FEASIBILITY ================= -->
+    <section>
+      <div class="sec-head"><span class="num">07</span><h2>Feasibility &amp; next steps</h2><span class="crit">Feasibility</span></div>
+      <div class="feas">
+        <div class="card">
+          <h3>Ready to run today</h3>
+          <ul>
+            <li><b>Hardware:</b> any laptop or tablet with a webcam + Chrome/Edge. Nothing to buy.</li>
+            <li><b>Cost:</b> free open-source stack; AI and Telegram optional.</li>
+            <li><b>Setup:</b> one command; a secure link opens it on phones.</li>
+            <li><b>Maintainable:</b> thresholds in one config file; 148 tests on every change.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Roadmap</h3>
+          <div class="road">
+            <div class="stage"><div class="k">NOW</div><p>Working prototype with all features above; tried by 4 early users.</p></div>
+            <div class="stage"><div class="k">NEXT</div><p>Caregiver login · hosted multi-household version · push notifications · smartwatch/oximeter · better speech.</p></div>
+            <div class="stage"><div class="k">LATER</div><p>Clinical validation with healthcare partners · more emergency types · low-cost tablet kiosk.</p></div>
+          </div>
+        </div>
+        <div class="card limits">
+          <h3>Honest limitations</h3>
+          <ul>
+            <li>Detection rules are not clinically validated.</li>
+            <li>One camera, one person in view.</li>
+            <li>The browser tab must stay open.</li>
+            <li>Not a medical device.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="refs">
+      <h4>REFERENCES</h4>
+      <ol>
+        <li>Institute for Public Health, MOH Malaysia. <i>National Health and Morbidity Survey 2023: NCD Fact Sheet.</i> 2024.</li>
+        <li>World Health Organization. <i>Falls — Fact sheet.</i> 2021.</li>
+        <li>Fleming J, Brayne C. Inability to get up after falling… people over 90. <i>BMJ</i> 2008;337:a2227.</li>
+        <li>World Health Organization. <i>Adherence to Long-Term Therapies: Evidence for Action.</i> 2003.</li>
+        <li>Kwolek B, Kepski M. Human fall detection on embedded platform… <i>Comput Methods Programs Biomed</i> 2014;117(3):489–501. UR Fall Detection Dataset, CC BY-NC-SA 4.0.</li>
+        <li>Google. <i>MediaPipe Pose Landmarker.</i> ai.google.dev/edge/mediapipe</li>
+        <li>MOH Malaysia Clinical Practice Guidelines (T2DM 2020, Hypertension 2018 and others), as cited in the app's library.</li>
+      </ol>
+      <p class="disclaimer"><b>Prototype for UTP CodeFest '26 — not a medical device. In an emergency call 999.</b> Built with the help of Claude Code (AI coding assistant), as disclosed under competition rules.</p>
+    </div>
+    <div class="qrs">
+      <div class="qr"><div class="box"><img src="assets/qr/video.svg" alt="QR: demo video"></div><span>DEMO VIDEO</span></div>
+      <div class="qr"><div class="box"><img src="assets/qr/github.svg" alt="QR: GitHub repository"></div><span>SOURCE CODE</span></div>
+    </div>
+  </footer>
+</div>
+<script>
+  // ?bleed=3 → 3 mm bleed on every side (page grows to 600 × 847 mm, artwork stays put)
+  const b = new URLSearchParams(location.search).get('bleed');
+  if (b) document.documentElement.style.setProperty('--b', b + 'mm');
+</script>
+</body>
+</html>
