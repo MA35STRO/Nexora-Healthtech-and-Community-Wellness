@@ -34,7 +34,10 @@ def _s(name: str, default: str = "") -> str:
 class Settings:
     # --- Fall detector (normalised image coords: y=0 top, y=1 bottom) ---
     window_s: float = _f("FALL_WINDOW_S", 1.5)  # how far back we look for a rapid drop
-    min_drop: float = _f("FALL_MIN_DROP", 0.20)  # hip must drop this fraction of frame height...
+    # Hip must drop this many TORSO LENGTHS (so it works near or far from the camera)...
+    min_drop_torso: float = _f("FALL_MIN_DROP_TORSO", 0.6)
+    min_torso: float = _f("FALL_MIN_TORSO", 0.08)  # smaller (very far away) is treated as this size
+    min_drop: float = _f("FALL_MIN_DROP", 0.20)  # ...or this fraction of frame height if size unknown
     upright_angle: float = _f("FALL_UPRIGHT_ANGLE", 35)  # ...from an upright torso (deg from vertical)
     horizontal_angle: float = _f("FALL_HORIZONTAL_ANGLE", 60)  # ...to a near-horizontal torso
     still_s: float = _f("FALL_STILL_S", 2.0)  # and stay down this long before we flag it

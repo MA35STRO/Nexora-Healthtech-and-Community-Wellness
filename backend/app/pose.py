@@ -25,8 +25,9 @@ LEFT_KNEE, RIGHT_KNEE = 25, 26
 VISIBLE = 0.5
 
 
-def pose_features(points) -> tuple[float, float, str, bool]:
-    """Returns (torso angle in degrees, hip height, posture label, whole torso really visible?)."""
+def pose_features(points) -> tuple[float, float, str, bool, float]:
+    """Returns (torso angle in degrees, hip height, posture label, whole torso really visible?,
+    torso length in the image)."""
 
     def seen(*ids):
         return all(points[i].visibility >= VISIBLE for i in ids)
@@ -39,10 +40,13 @@ def pose_features(points) -> tuple[float, float, str, bool]:
     # Angle of the shoulder→hip line from vertical: 0° upright, 90° horizontal.
     angle = math.degrees(math.atan2(abs(hip_x - shoulder_x), abs(hip_y - shoulder_y) + 1e-6))
 
-    if not seen(LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP):
-        return angle, hip_y, "upper body only", False  # hips were guessed: don't trust this frame
-
+    # How big the person looks: small when far from the camera, big when close.
     torso_length = math.hypot(hip_x - shoulder_x, hip_y - shoulder_y) + 1e-6
+
+    if not seen(LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP):
+        # hips were guessed: don't trust this frame
+        return angle, hip_y, "upper body only", False, torso_length
+
     knee_y = (points[LEFT_KNEE].y + points[RIGHT_KNEE].y) / 2
     if angle >= 60:
         posture = "lying"
@@ -52,7 +56,7 @@ def pose_features(points) -> tuple[float, float, str, bool]:
         posture = "sitting"
     else:
         posture = "standing"
-    return angle, hip_y, posture, True
+    return angle, hip_y, posture, True, torso_length
 
 
 def motion_score(previous: Optional[list], current: list) -> Optional[float]:
@@ -75,5 +79,5 @@ def observation_from_points(points: Optional[list], t: float, motion: Optional[f
         SimpleNamespace(x=float(p[0]), y=float(p[1]), visibility=float(p[2]) if len(p) > 2 else 1.0)
         for p in points
     ]
-    angle, hip_y, posture, full_body = pose_features(landmarks)
-    return Observation(t, True, angle, hip_y, posture, "camera", full_body, motion)
+    angle, hip_y, posture, full_body, torso_len = pose_features(landmarks)
+    return Observation(t, True, angle, hip_y, posture, "camera", full_body, motion, torso_len)

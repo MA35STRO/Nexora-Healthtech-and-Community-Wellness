@@ -19,6 +19,7 @@ class Observation:
     source: Source = "camera"
     full_body: bool = True  # shoulders AND hips actually visible (not guessed by the model)
     motion: Optional[float] = None  # mean landmark movement per frame (None = unknown)
+    torso_len: Optional[float] = None  # shoulder→hip length in the image (None = unknown, e.g. demo)
 
 
 DetectionKind = Literal[

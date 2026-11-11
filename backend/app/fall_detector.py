@@ -1,7 +1,10 @@
 """Temporal possible-fall detector.
 
 A single horizontal pose is NOT a fall (people lie on sofas). We require a sequence:
-  1. Upright torso, then a rapid hip drop (>= min_drop of frame height within window_s)
+  1. Upright torso, then a rapid hip drop within window_s. The drop is measured in the person's
+     own torso lengths (min_drop_torso), so a fall far from the camera, where the person looks
+     small, counts the same as one close up. Without a torso size (demo data) we fall back to
+     min_drop of frame height.
   2. Torso ends near-horizontal (or the person drops out of view)
   3. They stay down for still_s seconds
 Only then do we emit "possible_fall" — with human-readable reasons.
@@ -50,14 +53,26 @@ class FallDetector:
             return None
         start = min(upright, key=lambda o: o.hip_y)  # highest hip position in the window
         drop = now.hip_y - start.hip_y
-        if drop < self.cfg.min_drop or now.t <= start.t:
+        need = self._needed_drop(start)
+        if drop < need or now.t <= start.t:
             return None
         return {
             "t": now.t,
             "drop": drop,
+            "need": need,
+            "torso": start.torso_len,
             "duration": now.t - start.t,
             "start_angle": start.torso_angle,
         }
+
+    def _needed_drop(self, upright: Observation) -> float:
+        """How far (in frame height) the hips must fall to count, scaled to the person's size.
+
+        The torso is measured while the person is still upright, before the fall bends it out of shape.
+        """
+        if upright.torso_len is None:
+            return self.cfg.min_drop
+        return max(upright.torso_len, self.cfg.min_torso) * self.cfg.min_drop_torso
 
     # --- steps 2+3: still down (or out of view) for still_s? ---
     def _confirm_or_cancel(self, obs: Observation) -> Optional[Detection]:
@@ -73,7 +88,7 @@ class FallDetector:
             (
                 self.usable(obs)
                 and obs.torso_angle <= self.cfg.upright_angle
-                and obs.hip_y < c["low_hip"] - self.cfg.min_drop / 2
+                and obs.hip_y < c["low_hip"] - c["need"] / 2
             )
             if "low_hip" in c
             else False
@@ -91,8 +106,9 @@ class FallDetector:
             self.candidate = None  # dropped but ended e.g. sitting/crouching: not flagged
             return None
 
+        size = f" ({c['drop'] / c['torso']:.1f}× their torso length)" if c["torso"] else ""
         reasons = [
-            f"Hip position dropped {c['drop'] * 100:.0f}% of frame height in {c['duration']:.1f}s "
+            f"Hip position dropped {c['drop'] * 100:.0f}% of frame height{size} in {c['duration']:.1f}s "
             f"from an upright posture"
         ]
         if horizontal:

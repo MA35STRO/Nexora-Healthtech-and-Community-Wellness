@@ -77,6 +77,64 @@ def test_drop_then_out_of_view_flagged_with_reason():
     assert any("left the camera view" in r for r in out[0].reasons)
 
 
+# ---------- detector: distance from the camera ----------
+def feed_sized(det, frames, torso):
+    """Like feed(), but frames come from the camera with a known torso size (fraction of frame height)."""
+    out = []
+    for t, person, angle, hip in frames:
+        d = det.update(Observation(t, person, angle, hip, source="camera", torso_len=torso))
+        if d:
+            out.append(d)
+    return out
+
+
+def test_fall_far_from_camera_is_flagged():
+    """Far away the person looks small: a real fall moves the hips only 15% of the frame.
+    The old frame-height rule (20%) missed this; measured in torso lengths it is a big drop."""
+    torso = 0.10
+    stand = [(i / 10, True, 5, 0.50) for i in range(30)]
+    desc = [(3 + i / 10, True, 5 + i * 14, 0.50 + i * 0.025) for i in range(7)]  # 0.15 drop = 1.5 torsos
+    lie = [(3.7 + i / 10, True, 85, 0.65) for i in range(30)]
+    out = feed_sized(FallDetector(CFG), stand + desc + lie, torso)
+    assert len(out) == 1
+    assert "torso length" in out[0].reasons[0]
+
+
+def test_small_wobble_far_from_camera_not_flagged():
+    """A far-away person bending a little: hips move 3% of the frame (0.3 torsos) — not a fall."""
+    torso = 0.10
+    stand = [(i / 10, True, 5, 0.50) for i in range(30)]
+    bend = [(3 + i / 10, True, 70, 0.53) for i in range(40)]
+    assert feed_sized(FallDetector(CFG), stand + bend, torso) == []
+
+
+def test_bending_over_close_to_camera_not_flagged():
+    """Close up the person looks big: bending to pick something up drops the hips 21% of the frame,
+    which the old rule treated as a fall. It is only about half a torso length, so not a fall."""
+    torso = 0.40
+    stand = [(i / 10, True, 5, 0.50) for i in range(30)]
+    bend = [(3 + i / 10, True, 5 + i * 13, 0.50 + i * 0.042) for i in range(6)]  # ends 0.21 lower
+    stay = [(3.6 + i / 10, True, 70, 0.71) for i in range(30)]
+    assert feed_sized(FallDetector(CFG), stand + bend + stay, torso) == []
+
+
+def test_tiny_far_away_person_uses_minimum_size():
+    """A very distant person (torso 3% of frame) is treated as torso 8% so tracking jitter isn't a fall."""
+    stand = [(i / 10, True, 5, 0.50) for i in range(30)]
+    jitter = [(3 + i / 10, True, 70, 0.54) for i in range(40)]  # 0.04 drop: > 0.6×0.03 but < 0.6×0.08
+    assert feed_sized(FallDetector(CFG), stand + jitter, 0.03) == []
+
+
+def test_camera_frames_carry_torso_size():
+    from app.pose import observation_from_points
+
+    points = [[0.5, 0.5, 0.0]] * 33
+    points[11] = points[12] = [0.5, 0.30, 0.9]  # shoulders
+    points[23] = points[24] = [0.5, 0.55, 0.9]  # hips
+    obs = observation_from_points(points, t=0)
+    assert obs.torso_len == pytest.approx(0.25, abs=1e-3)
+
+
 # ---------- reply classifier ----------
 @pytest.mark.parametrize(
     "text,intent",
