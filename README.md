@@ -104,7 +104,7 @@ Requirements: **Python 3.12**, **Node 20+**, and **Chrome or Edge** (for camera 
 ./start.sh
 ```
 
-Then open **http://localhost:8000**. The browser asks for camera permission and monitoring starts on its own. Open **http://localhost:8000/caregiver** in another tab, or on another screen, to see the caregiver view.
+Then open **http://localhost:8000**. If another program already uses port 8000 (Oracle Database does, for example), Kawan picks the next free port and prints the address to open, e.g. `http://localhost:8080`. To choose the port yourself, set `KAWAN_PORT` first. The browser asks for camera permission and monitoring starts on its own. Open **http://localhost:8000/caregiver** in another tab, or on another screen, to see the caregiver view.
 
 **First time?** Open **How to use** in the top menu (http://localhost:8000/guide). It's a step-by-step guide in English and Bahasa Melayu. Then fill in **Profile & settings** and the **Medication schedule** on the Caregiver page.
 

@@ -30,8 +30,10 @@ if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike '*Cloudf
   throw 'cloudflared.exe is not validly signed by Cloudflare - deleted it. Please try again.'
 }
 
-# 2. the app itself (reuse it if it is already running)
-if (-not (Test-Health 'http://127.0.0.1:8000')) {
+# 2. the app itself (reuse it if start.ps1 or an earlier run already started it)
+. (Join-Path $root 'scripts\port.ps1')
+$port = Get-SavedKawanPort
+if (-not $port -or -not (Test-Health "http://127.0.0.1:$port")) {
   if (-not (Test-Path (Join-Path $root 'frontend\dist\index.html'))) {
     Write-Host 'Building the dashboard...'
     Push-Location (Join-Path $root 'frontend')
@@ -41,21 +43,24 @@ if (-not (Test-Health 'http://127.0.0.1:8000')) {
   }
   $py = Join-Path $root 'backend\.venv\Scripts\python.exe'
   if (-not (Test-Path $py)) { throw 'Python environment missing - run .\start.ps1 once first.' }
-  Write-Host 'Starting the Kawan hub...'
-  $server = Start-Process $py -ArgumentList '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000' `
+  $port = Get-KawanPort
+  Write-Host "Starting the Kawan hub on port $port..."
+  $server = Start-Process $py -ArgumentList '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', "$port" `
     -WorkingDirectory (Join-Path $root 'backend') -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server.err.log')
   $started += $server
-  for ($i = 0; $i -lt 30 -and -not (Test-Health 'http://127.0.0.1:8000'); $i++) { Start-Sleep 1 }
-  if (-not (Test-Health 'http://127.0.0.1:8000')) { throw 'The hub did not start - see server.err.log' }
+  Save-KawanPort $port
+  for ($i = 0; $i -lt 30 -and -not (Test-Health "http://127.0.0.1:$port"); $i++) { Start-Sleep 1 }
+  if (-not (Test-Health "http://127.0.0.1:$port")) { throw 'The hub did not start - see server.err.log' }
 }
+$base = "http://127.0.0.1:$port"
 
 try {
   # 3. the tunnel
   Write-Host 'Opening the secure tunnel...'
   $log = Join-Path $tools 'tunnel.log'
   if (Test-Path $log) { Remove-Item $log -Force }
-  $tunnel = Start-Process $cf -ArgumentList 'tunnel', '--no-autoupdate', '--url', 'http://127.0.0.1:8000' `
+  $tunnel = Start-Process $cf -ArgumentList 'tunnel', '--no-autoupdate', '--url', $base `
     -WindowStyle Hidden -PassThru -RedirectStandardError $log -RedirectStandardOutput (Join-Path $tools 'tunnel.out.log')
   $started += $tunnel
 
@@ -91,5 +96,6 @@ try {
 }
 finally {
   foreach ($p in $started) { if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force } }
+  if ($server -and $started -contains $server) { Remove-Item $KawanPortFile -Force -ErrorAction SilentlyContinue }
   if ($started.Count) { Write-Host 'Stopped the tunnel and anything this script started.' }
 }
