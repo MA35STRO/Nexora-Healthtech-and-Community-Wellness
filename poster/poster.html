@@ -9,6 +9,7 @@
    Kawan — A1 portrait poster (594 × 841 mm). Text comes from CONTENT.md.
    Build PDF/PNG with:  node poster/build.mjs        (see poster/README.md)
    ?bleed=3 in the URL adds 3 mm bleed on every side for print shops.
+   Every technical claim was checked against the repo on 2026-11-11.
    ====================================================================== */
 @font-face { font-family: "Sora"; src: url("assets/fonts/Sora.ttf") format("truetype"); font-weight: 100 800; }
 @font-face { font-family: "Jakarta"; src: url("assets/fonts/PlusJakartaSans.ttf") format("truetype"); font-weight: 200 800; }
@@ -17,8 +18,8 @@
 :root {
   --b: 0mm;                 /* bleed (set by ?bleed=3) */
   --ink: #0b1a24;           /* deep navy: header, headings */
-  --ink-2: #3a5260;         /* body text */
-  --ink-3: #647a84;         /* captions */
+  --ink-2: #344c59;         /* body text */
+  --ink-3: #5c727c;         /* captions */
   --paper: #f5f3ed;         /* warm off-white, matches the app background */
   --card: #ffffff;
   --line: #dde3df;
@@ -27,10 +28,11 @@
   --mint: #5fe0c8;
   --lime: #b5e04a;          /* from the CodeFest '26 logo */
   --cyan: #1fb5c9;
-  --amber: #e0901c;         /* check-in */
+  --amber: #d98612;         /* check-in */
   --red: #d64045;           /* escalate */
   --green: #2e9a5c;         /* okay */
   --tint: #e6f4f1;
+  --grey: #8a979d;
 }
 @page { size: calc(594mm + 2 * var(--b)) calc(841mm + 2 * var(--b)); margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,154 +46,205 @@ body { font-family: "Jakarta", sans-serif; color: var(--ink-2); -webkit-print-co
   display: flex; flex-direction: column;
 }
 b, strong { color: var(--ink); font-weight: 750; }
-sup.ref { font-family: "Mono"; font-size: .58em; color: var(--teal); font-weight: 700; vertical-align: super; line-height: 0; }
+sup.ref { font-family: "Mono"; font-size: .6em; color: var(--teal); font-weight: 700; vertical-align: super; line-height: 0; }
 .card { background: var(--card); border-radius: 4.5mm; border: .45mm solid var(--line); }
-.small { font-size: 12pt; line-height: 1.38; color: var(--ink-3); }
+.small { font-size: 12.5pt; line-height: 1.36; color: var(--ink-3); }
+.label { font-family: "Mono"; font-size: 11pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
 
 /* ---------- header ---------- */
 .header {
   background: var(--ink); color: #e9f3f1; position: relative;
-  padding: calc(9mm + var(--b)) calc(20mm + var(--b)) 9mm;
+  padding: calc(8mm + var(--b)) calc(20mm + var(--b)) 8mm;
 }
 .header::after { /* thin lime → cyan rule, echoing the CodeFest logo */
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2mm;
   background: linear-gradient(90deg, var(--lime), var(--teal-2) 55%, var(--cyan));
 }
-.logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5mm; }
+.logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2mm; }
 .logos .utp { height: 15mm; }
-.logos .cf { height: 31mm; mix-blend-mode: screen; margin: -4mm 0; }
+.logos .cf { height: 29mm; mix-blend-mode: screen; margin: -4mm 0; }
 .logos .event { font-family: "Mono"; font-size: 14pt; letter-spacing: .16em; color: #9fb8bf; text-transform: uppercase; }
 .logos .event b { color: var(--lime); font-weight: 700; }
 
-.hero { display: grid; grid-template-columns: 1fr 146mm; gap: 12mm; align-items: center; }
-.title { font-family: "Sora"; font-weight: 750; font-size: 96pt; line-height: .88; letter-spacing: -.035em; color: #fff; }
+.hero { display: grid; grid-template-columns: 1fr 140mm; gap: 12mm; align-items: center; }
+.title { font-family: "Sora"; font-weight: 750; font-size: 86pt; line-height: .88; letter-spacing: -.035em; color: #fff; }
 .title .dot { color: var(--mint); }
 .malay { font-family: "Mono"; font-size: 13pt; color: var(--mint); letter-spacing: .08em; margin: 2mm 0 3mm; }
 .subtitle { font-family: "Sora"; font-weight: 500; font-size: 23pt; line-height: 1.22; color: #fff; text-wrap: balance; max-width: 300mm; }
-.tagline { margin-top: 4mm; font-size: 19pt; font-weight: 600; color: #bfe9e1; }
+.tagline { margin-top: 3.5mm; font-size: 19pt; font-weight: 600; color: #bfe9e1; }
 .tagline span { color: #fff; }
 .team { margin-top: 4mm; display: flex; gap: 5mm; align-items: baseline; }
 .team .name { font-family: "Sora"; font-weight: 700; font-size: 19pt; color: var(--lime); }
 .team .track { font-family: "Mono"; font-size: 12pt; color: #9fb8bf; letter-spacing: .08em; }
-.members { margin-top: 1.5mm; font-size: 13pt; color: #c9d8dc; line-height: 1.5; }
+.members { margin-top: 1.2mm; font-size: 13.5pt; color: #c9d8dc; line-height: 1.42; }
 
-.hero-shot { border-radius: 6mm; overflow: hidden; background: #fffdf8; position: relative; }
+.hero-shot { border-radius: 6mm; overflow: hidden; background: #fffdf8; }
 .hero-shot img { display: block; width: 100%; }
-.hero-shot figcaption { padding: 2.2mm 4.5mm 2.4mm; font-size: 11pt; color: #cfe3e0; background: #10293a; }
+.hero-shot figcaption { padding: 2.2mm 4.5mm 2.4mm; font-size: 11.5pt; color: #cfe3e0; background: #10293a; }
 
 /* ---------- content ---------- */
-.content { flex: 1; padding: 7mm calc(20mm + var(--b)) 0; display: flex; flex-direction: column; justify-content: space-between; }
+.content { flex: 1; padding: 6mm calc(20mm + var(--b)) 0; display: flex; flex-direction: column; justify-content: space-between; }
 .row { display: grid; gap: 7mm; }
-.sec-head { display: flex; align-items: baseline; gap: 3.5mm; margin-bottom: 3.2mm; }
+.sec-head { display: flex; align-items: baseline; gap: 3.5mm; margin-bottom: 3mm; }
 .sec-head .num { font-family: "Mono"; font-weight: 700; font-size: 15pt; color: var(--teal); }
-.sec-head h2 { font-family: "Sora"; font-weight: 700; font-size: 28pt; color: var(--ink); letter-spacing: -.01em; }
+.sec-head h2 { font-family: "Sora"; font-weight: 700; font-size: 27pt; color: var(--ink); letter-spacing: -.01em; }
 .sec-head .crit { margin-left: auto; font-family: "Mono"; font-size: 10.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: .45mm solid var(--line); border-radius: 99mm; padding: .8mm 3mm; }
 .lead { font-family: "Sora"; font-weight: 600; font-size: 16.5pt; color: var(--ink); line-height: 1.25; margin-bottom: 2.6mm; }
 
 /* problem */
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-.stat { padding: 3.4mm 4.4mm; }
-.stat .big { font-family: "Sora"; font-weight: 750; font-size: 34pt; line-height: 1; color: var(--ink); letter-spacing: -.02em; }
+.stat { padding: 3.4mm 4.6mm; }
+.stat .big { font-family: "Sora"; font-weight: 750; font-size: 33pt; line-height: 1; color: var(--ink); letter-spacing: -.02em; }
 .stat .big small { font-size: .5em; font-weight: 700; color: var(--teal); }
-.stat p { margin-top: 1.4mm; font-size: 13pt; line-height: 1.33; }
+.stat p { margin-top: 1.4mm; font-size: 13.5pt; line-height: 1.33; }
 .stat.hl { background: var(--ink); border-color: var(--ink); }
 .stat.hl .big, .stat.hl b { color: #fff; }
 .stat.hl p { color: #c6d6da; }
 .stat.hl .big small { color: var(--mint); }
-.callout { margin-top: 3.4mm; padding: 2.8mm 4.6mm; border-left: 2mm solid var(--amber); background: #fbf1e1; border-radius: 0 4mm 4mm 0; font-size: 13.5pt; line-height: 1.34; color: var(--ink); }
 
 /* solution */
-.flow { display: grid; gap: 3.6mm; }
-.fstep { display: grid; grid-template-columns: 12mm 1fr; gap: 4mm; align-items: center; background: var(--card); border: .45mm solid var(--line); border-radius: 4.5mm; padding: 3mm 4.5mm 3mm 3.5mm; position: relative; }
-.fstep:not(:last-child)::after { content: ""; position: absolute; left: 8.9mm; bottom: -3.7mm; border-top: 3.2mm solid var(--teal); border-left: 2.6mm solid transparent; border-right: 2.6mm solid transparent; z-index: 2; }
-.fstep .ic { width: 12mm; height: 12mm; border-radius: 99mm; display: grid; place-items: center; font-family: "Mono"; font-weight: 800; font-size: 15pt; color: #fff; }
-.fstep h3 { font-family: "Sora"; font-weight: 750; font-size: 18pt; color: var(--ink); line-height: 1.15; }
-.fstep p { font-size: 13.5pt; line-height: 1.32; margin-top: .5mm; }
+.flow { display: grid; gap: 3.4mm; height: calc(100% - 13mm); grid-auto-rows: 1fr; }
+.fstep { display: grid; grid-template-columns: 11mm 1fr; gap: 4mm; align-items: center; background: var(--card); border: .45mm solid var(--line); border-radius: 4.5mm; padding: 2.2mm 4.5mm 2.2mm 3.5mm; position: relative; }
+.fstep:not(:last-child)::after { content: ""; position: absolute; left: 8.4mm; bottom: -3.7mm; border-top: 3.2mm solid var(--teal); border-left: 2.6mm solid transparent; border-right: 2.6mm solid transparent; z-index: 2; }
+.fstep .ic { width: 11mm; height: 11mm; border-radius: 99mm; display: grid; place-items: center; font-family: "Mono"; font-weight: 800; font-size: 15pt; color: #fff; }
+.fstep h3 { font-family: "Sora"; font-weight: 750; font-size: 17pt; color: var(--ink); line-height: 1.15; display: inline; margin-right: 2mm; }
+.fstep p { font-size: 13.5pt; line-height: 1.3; display: inline; }
 .f1 .ic { background: var(--teal-2); } .f2 .ic { background: var(--amber); } .f3 .ic { background: var(--red); } .f4 .ic { background: var(--ink); }
-.pills { display: flex; gap: 2.2mm; flex-wrap: wrap; margin-top: 3.4mm; }
-.pill { font-size: 12.5pt; font-weight: 650; color: var(--teal); background: var(--tint); border-radius: 99mm; padding: 1.1mm 4mm; }
+
+/* conventional alarm vs Kawan */
+.versus { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-top: 4.5mm; }
+.lane { border-radius: 4.5mm; padding: 3.4mm 4.5mm 3.6mm; }
+.lane .label { margin-bottom: 2.2mm; }
+.lane.old { background: #eceae4; border: .45mm dashed #c9c6be; }
+.lane.new { background: var(--ink); }
+.lane.new .label { color: var(--mint); }
+.chain { display: flex; align-items: stretch; gap: 2.2mm; }
+.chip { border-radius: 3mm; padding: 2mm 3mm; font-size: 13.5pt; line-height: 1.22; font-weight: 650; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; }
+.old .chip { background: #fff; color: #56656c; border: .45mm solid #d9d6cf; }
+.new .chip { background: #10354a; color: #e3f4f1; }
+.chain .chip:last-child { flex: 1.5; }
+.chip.bad { background: #fbe3e3 !important; color: #a8282c !important; border-color: #f2c3c4 !important; }
+.chip.good { background: var(--teal) !important; color: #fff !important; }
+.arr { color: var(--grey); font-size: 15pt; font-weight: 800; flex: none; align-self: center; }
+.new .arr { color: var(--mint); }
+.lane .note { margin-top: 2mm; font-size: 12.5pt; line-height: 1.32; color: #5f6d73; }
+.lane.new .note { color: #a9c7c6; }
+.lane.new .note b { color: #fff; }
 
 /* how it works */
 .diagram { padding: 3mm 4mm; display: flex; align-items: center; }
 .diagram svg { width: 100%; display: block; }
-.fall { padding: 4.2mm 5mm; display: flex; flex-direction: column; }
-.fall .lead { font-size: 16.5pt; margin-bottom: 2mm; }
-.fall img { width: 100%; display: block; margin: 0 0 2.6mm; }
+.fall { padding: 4mm 5mm; display: flex; flex-direction: column; }
+.fall .lead { font-size: 16pt; margin-bottom: 2mm; }
+.fall img { width: 94%; display: block; margin: 0 auto 2.4mm; }
 .rule { display: grid; grid-template-columns: auto 1fr; gap: 1.1mm 2.8mm; margin-bottom: 2.4mm; }
 .rule .n { font-family: "Mono"; font-weight: 700; font-size: 11.5pt; color: #fff; background: var(--teal); border-radius: 99mm; width: 6.4mm; height: 6.4mm; display: grid; place-items: center; }
-.rule div { font-size: 13pt; line-height: 1.3; align-self: center; }
-.out { background: var(--ink); color: #cfe3e0; border-radius: 3.2mm; padding: 3mm 4mm; font-family: "Mono"; font-size: 10.8pt; line-height: 1.48; }
+.rule div { font-size: 13.5pt; line-height: 1.3; align-self: center; }
+.out { background: var(--ink); color: #cfe3e0; border-radius: 3.2mm; padding: 2.8mm 4mm; font-family: "Mono"; font-size: 11.5pt; line-height: 1.45; }
 .out .lbl { color: var(--mint); font-weight: 700; }
 
-/* features: real screenshot on the left, text on the right */
-.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4.5mm; }
-.feat { overflow: hidden; display: grid; grid-template-columns: 52% 1fr; }
-.feat .shot { background: #f1eee7; border-right: .45mm solid var(--line); padding: 2mm; display: flex; align-items: center; justify-content: center; height: 53mm; }
-.feat .shot img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 2mm; }
-.feat .txt { padding: 3.4mm 4mm; display: flex; flex-direction: column; justify-content: center; }
-.feat h3 { font-family: "Sora"; font-weight: 700; font-size: 15.5pt; color: var(--ink); line-height: 1.18; margin-bottom: 1.4mm; }
-.feat p { font-size: 12pt; line-height: 1.32; }
+/* screens: three big real screenshots + what else is built */
+.screens { display: grid; grid-template-columns: 1.55fr 0.74fr 1.75fr 0.9fr; gap: 4.5mm; align-items: stretch; }
+.scr { overflow: hidden; display: flex; flex-direction: column; }
+.scr .img { height: 80mm; background: #f1eee7; display: flex; align-items: center; justify-content: center; padding: 2.2mm; }
+.scr .img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 2mm; }
+.scr .cap { padding: 2.4mm 3.6mm 2.8mm; border-top: .45mm solid var(--line); }
+.scr .cap h3 { font-family: "Sora"; font-weight: 700; font-size: 15pt; color: var(--ink); line-height: 1.18; }
+.scr .cap p { font-size: 12.5pt; line-height: 1.3; margin-top: .6mm; }
+.also { padding: 4mm 4.6mm; display: flex; flex-direction: column; }
+.also ul { list-style: none; display: grid; gap: 2.4mm; margin-top: 2.2mm; flex: 1; align-content: space-evenly; }
+.also li { font-size: 13.5pt; line-height: 1.3; padding-left: 5.5mm; position: relative; }
+.also li::before { content: ""; position: absolute; left: 0; top: 1.9mm; width: 2.8mm; height: 2.8mm; border-radius: 99mm; background: var(--teal-2); }
 
-/* safety */
-.safety { padding: 4.6mm 5.5mm; background: var(--ink); border-color: var(--ink); display: flex; flex-direction: column; }
+/* safety & privacy */
+.safety { padding: 4.4mm 5.4mm; background: var(--ink); border-color: var(--ink); display: flex; flex-direction: column; }
 .safety .sec-head h2 { color: #fff; }
 .safety .sec-head .num { color: var(--mint); }
-.safety ul { list-style: none; display: grid; gap: 3.4mm; flex: 1; align-content: space-evenly; }
-.safety li { font-size: 14pt; line-height: 1.34; color: #c6d6da; padding-left: 6.5mm; position: relative; }
+.safety ul { list-style: none; display: grid; gap: 2.4mm; }
+.safety li { font-size: 14pt; line-height: 1.32; color: #c6d6da; padding-left: 6.5mm; position: relative; }
 .safety li::before { content: ""; position: absolute; left: 0; top: 2.2mm; width: 3mm; height: 3mm; border-radius: 1mm; background: var(--mint); }
 .safety li b { color: #fff; }
-.safety .quote { margin-top: 3.6mm; padding-top: 3mm; border-top: .45mm solid #234050; font-family: "Mono"; font-size: 11.5pt; color: var(--lime); }
+.dataflow { margin-top: auto; padding-top: 3.2mm; border-top: .45mm solid #234050; }
+.dataflow .label { color: var(--mint); margin-bottom: 2mm; }
+.dfrow { display: flex; align-items: stretch; gap: 2mm; }
+.dfrow .box { background: #10354a; color: #cfe3e0; border-radius: 2.6mm; padding: 1.8mm 2.6mm; font-size: 12.5pt; line-height: 1.25; text-align: center; flex: 1; }
+.dfrow .box b { color: #fff; }
+.dfrow .box.hot { background: #1d4a3f; }
+.dfrow .arr { color: var(--mint); font-weight: 800; }
+.dataflow p { margin-top: 2.2mm; font-size: 12.5pt; line-height: 1.32; color: #a9c7c6; }
+.dataflow p b { color: #fff; }
+
+.offline { padding: 4.4mm 5.4mm; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 5mm; align-content: start; }
+.offline .head { grid-column: 1 / -1; }
+.offline .col h3 { font-family: "Sora"; font-size: 15pt; font-weight: 700; color: var(--ink); margin-bottom: 2mm; display: flex; align-items: center; gap: 2.4mm; }
+.offline .col h3 .dot { width: 4mm; height: 4mm; border-radius: 99mm; flex: none; }
+.offline ul { list-style: none; display: grid; gap: 1.8mm; }
+.offline li { font-size: 13.5pt; line-height: 1.3; padding-left: 4.5mm; position: relative; }
+.offline li::before { content: "·"; position: absolute; left: .5mm; font-weight: 800; color: var(--ink-3); }
+.offline li small { color: var(--ink-3); font-size: .9em; }
+.offline .foot { grid-column: 1 / -1; font-size: 12.5pt; line-height: 1.3; color: var(--ink-3); border-top: .45mm solid var(--line); padding-top: 2.2mm; }
 
 /* results */
-.results { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-.metric { padding: 3.2mm 4.4mm; }
-.label { font-family: "Mono"; font-size: 10.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-.metric .big { font-family: "Sora"; font-weight: 750; font-size: 30pt; color: var(--ink); line-height: 1; margin: 1.2mm 0 1.2mm; }
-.metric .big small { font-size: .4em; color: var(--ink-3); font-weight: 600; }
-.metric .cap { font-size: 12pt; line-height: 1.34; }
-.pending, .pending b { color: var(--amber) !important; }
-.quotes { padding: 3.2mm 4.4mm; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 2.2mm 6mm; }
-.quotes .label { grid-column: 1 / -1; }
-.q { font-size: 12.5pt; line-height: 1.3; color: var(--ink); padding-left: 4.5mm; border-left: 1.1mm solid var(--teal-2); font-style: italic; }
-table.heard { grid-column: 1 / -1; width: 100%; border-collapse: collapse; margin-top: 1mm; }
-table.heard th { text-align: left; font-family: "Mono"; font-size: 10pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 1.6mm 3mm 1mm 0; font-weight: 600; }
-table.heard td { font-size: 11.5pt; line-height: 1.26; padding: 1.2mm 3mm 1.2mm 0; border-top: .45mm solid var(--line); vertical-align: top; }
+.results { display: grid; grid-template-columns: 1.08fr 1fr; gap: 4.5mm; }
+.eval { padding: 4mm 5mm; }
+.evnums { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin: 2.2mm 0 2.6mm; }
+.evnum .big { font-family: "Sora"; font-weight: 750; font-size: 36pt; color: var(--ink); line-height: 1; }
+.evnum .big small { font-size: .42em; color: var(--ink-3); font-weight: 650; }
+.evnum p { font-size: 13.5pt; line-height: 1.3; margin-top: 1mm; }
+.evnum.amber .big { color: var(--amber); }
+.meaning { display: flex; align-items: stretch; gap: 2mm; background: var(--tint); border-radius: 3mm; padding: 2.2mm 3mm; margin-bottom: 2.4mm; }
+.meaning .chip { font-size: 12.5pt; padding: 1.6mm 2.4mm; background: #fff; color: var(--ink); border: .45mm solid var(--line); }
+.meaning .chip.ck { background: #fbefd9; border-color: #f1d7a9; color: #7a4d0a; }
+.meaning .chip.esc { background: var(--red); color: #fff; border-color: var(--red); }
+.meaning .arr { color: var(--teal); }
+.cond { font-size: 12.5pt; line-height: 1.34; color: var(--ink-2); }
+.disclose { margin-top: 2.2mm; font-size: 12.5pt; line-height: 1.32; color: #7a4d0a; background: #fbf1e1; border-radius: 2.6mm; padding: 1.8mm 3mm; }
+.disclose b { color: #7a4d0a; }
+.right-col { display: grid; gap: 4.5mm; grid-template-rows: auto 1fr; }
+.tests { padding: 3.6mm 4.8mm; display: flex; align-items: center; gap: 5mm; }
+.tests .big { font-family: "Sora"; font-weight: 750; font-size: 34pt; color: var(--ink); line-height: 1; }
+.tests p { font-size: 13pt; line-height: 1.3; }
+.quotes { padding: 3.6mm 4.8mm; }
+.qs { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 5mm; margin: 2mm 0 2.4mm; }
+.q { font-size: 13pt; line-height: 1.3; color: var(--ink); padding-left: 4mm; border-left: 1.1mm solid var(--teal-2); font-style: italic; }
+table.heard { width: 100%; border-collapse: collapse; }
+table.heard th { text-align: left; font-family: "Mono"; font-size: 10.5pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 0 3mm 1mm 0; font-weight: 600; }
+table.heard td { font-size: 12.5pt; line-height: 1.26; padding: 1.3mm 3mm 1.3mm 0; border-top: .45mm solid var(--line); vertical-align: top; }
 table.heard td:first-child { color: var(--ink); width: 42%; }
 .done { color: var(--green); font-weight: 750; }
 
 /* feasibility */
-.feas { display: grid; grid-template-columns: 1.05fr 1.4fr .85fr; gap: 4.5mm; }
+.feas { display: grid; grid-template-columns: 1fr 1.55fr; gap: 4.5mm; }
 .feas .card { padding: 3.8mm 4.8mm; }
 .feas h3 { font-family: "Sora"; font-weight: 700; font-size: 15.5pt; color: var(--ink); margin-bottom: 1.8mm; }
 .feas ul { list-style: none; display: grid; gap: 1.4mm; }
-.feas li { font-size: 12.5pt; line-height: 1.32; }
+.feas li { font-size: 13.5pt; line-height: 1.3; }
 .road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
-.road .stage { border-radius: 3.2mm; padding: 2.8mm 3.4mm; background: var(--tint); }
+.road .stage { border-radius: 3.2mm; padding: 2.6mm 3.4mm; background: var(--tint); }
 .road .stage:nth-child(2) { background: #eef3fa; }
 .road .stage:nth-child(3) { background: #f3f0e8; }
 .road .k { font-family: "Mono"; font-weight: 700; font-size: 11.5pt; letter-spacing: .1em; color: var(--teal); }
 .road .stage:nth-child(2) .k { color: #3d6fb5; }
 .road .stage:nth-child(3) .k { color: #8a6d2c; }
-.road p { font-size: 12pt; line-height: 1.3; margin-top: .8mm; }
-.limits { background: #fbf1e1 !important; border-color: #f0dcbc !important; }
+.road p { font-size: 13pt; line-height: 1.3; margin-top: .6mm; }
 
 /* ---------- footer ---------- */
 .footer {
-  margin-top: 6mm; background: var(--ink); color: #b7c9ce;
+  margin-top: 5mm; background: var(--ink); color: #b7c9ce;
   padding: 4.2mm calc(20mm + var(--b)) calc(4.2mm + var(--b));
   display: grid; grid-template-columns: 1fr auto; gap: 9mm; align-items: center;
 }
-.refs h4 { font-family: "Mono"; font-size: 10.5pt; letter-spacing: .12em; color: var(--mint); margin-bottom: 1.4mm; }
-.refs ol { columns: 2; column-gap: 8mm; padding-left: 5mm; }
-.refs li { font-size: 10pt; line-height: 1.34; margin-bottom: .6mm; break-inside: avoid; }
+.refs h4 { font-family: "Mono"; font-size: 11pt; letter-spacing: .12em; color: var(--mint); margin-bottom: 1.2mm; }
+.refs ol { columns: 3; column-gap: 7mm; padding-left: 5.5mm; }
+.refs li { font-size: 11.5pt; line-height: 1.32; margin-bottom: .5mm; break-inside: avoid; }
 .refs li i { color: #dce8ea; }
-.disclaimer { margin-top: 2mm; font-size: 10.5pt; color: #8fa6ad; }
+.disclaimer { margin-top: 1.8mm; font-size: 11.5pt; line-height: 1.35; color: #9db2b8; }
 .disclaimer b { color: #fff; }
 .qrs { display: flex; gap: 5mm; }
 .qr { text-align: center; }
-.qr .box { background: #fff; padding: 2.2mm; border-radius: 2.6mm; width: 31mm; height: 31mm; }
+.qr .box { background: #fff; padding: 2mm; border-radius: 2.6mm; width: 28mm; height: 28mm; }
 .qr img { width: 100%; height: 100%; display: block; }
-.qr span { display: block; margin-top: 1.6mm; font-family: "Mono"; font-size: 10.5pt; color: #fff; font-weight: 700; letter-spacing: .06em; }
+.qr span { display: block; margin-top: 1.4mm; font-family: "Mono"; font-size: 11pt; color: #fff; font-weight: 700; letter-spacing: .06em; }
 </style>
 </head>
 <body>
@@ -216,65 +269,74 @@ table.heard td:first-child { color: var(--ink); width: 42%; }
       <!-- PHOTO SLOT: swap to assets/photos/kawan-in-use.jpg (and update the caption) when the team photo arrives -->
       <figure class="hero-shot">
         <img src="assets/screens/tiles/hero-checkin.png" alt="Kawan asking 'Are you okay?' after a possible fall">
-        <figcaption>Real app screen: Kawan checks in after a possible fall (simulated scenario)</figcaption>
+        <figcaption>Real app screen · check-in after a possible fall (simulated)</figcaption>
       </figure>
     </div>
   </header>
 
   <main class="content">
 
-    <!-- ================= 01 PROBLEM + 02 SOLUTION ================= -->
-    <div class="row" style="grid-template-columns: 1.22fr 1fr; gap: 8mm;">
-      <section>
-        <div class="sec-head"><span class="num">01</span><h2>The problem</h2><span class="crit">Impact</span></div>
-        <p class="lead">Living alone with an illness is risky; help often arrives too late.</p>
-        <div class="stats">
-          <div class="card stat"><div class="big">15.6<small>%</small></div><p>of Malaysian adults have <b>diabetes</b> and <b>29.2%</b> hypertension; about 4 in 10 of them don't know it.<sup class="ref">1</sup></p></div>
-          <div class="card stat"><div class="big">684k</div><p>people die from <b>falls</b> every year. Adults over 60 suffer the most fatal falls.<sup class="ref">2</sup></p></div>
-          <div class="card stat hl"><div class="big">80<small>%</small></div><p>of fallers over 90 <b>could not get up alone</b>; 30% lay on the floor for an hour or more. <b>Call alarms mostly went unused.</b><sup class="ref">3</sup></p></div>
-          <div class="card stat"><div class="big">~50<small>%</small></div><p>of patients with long-term illness <b>don't take their medicine</b> as prescribed.<sup class="ref">4</sup></p></div>
+    <!-- ================= 01 PROBLEM + 02 SOLUTION + ALARM vs KAWAN ================= -->
+    <section>
+      <div class="row" style="grid-template-columns: 1.08fr 1fr; gap: 8mm;">
+        <div>
+          <div class="sec-head"><span class="num">01</span><h2>The problem</h2><span class="crit">Impact</span></div>
+                    <div class="stats">
+            <div class="card stat"><div class="big">15.6<small>%</small></div><p>of Malaysian adults have <b>diabetes</b>, 29.2% hypertension; ~4 in 10 don't know it.<sup class="ref">1</sup></p></div>
+            <div class="card stat"><div class="big">684k</div><p>people die from <b>falls</b> each year; most fatal falls are in over-60s.<sup class="ref">2</sup></p></div>
+            <div class="card stat hl"><div class="big">80<small>%</small></div><p>of fallers over 90 <b>couldn't get up alone</b>; 30% lay on the floor ≥ 1 hour.<sup class="ref">3</sup></p></div>
+            <div class="card stat"><div class="big">~50<small>%</small></div><p>of long-term patients <b>don't take medicine</b> as prescribed.<sup class="ref">4</sup></p></div>
+          </div>
         </div>
-        <div class="callout">Today's tools wait for the person to <b>press a button or read a chart</b>. After a fall, in confusion, or when a dose is forgotten, that is exactly when they can't.</div>
-      </section>
-      <section>
-        <div class="sec-head"><span class="num">02</span><h2>Our solution</h2><span class="crit">Impact · Usability</span></div>
-                <div class="flow">
-          <div class="fstep f1"><span class="ic">1</span><div><h3>Notice</h3><p>The device's own camera spots falls and unusual stillness; medicines and readings are tracked.</p></div></div>
-          <div class="fstep f2"><span class="ic">2</span><div><h3>Check in</h3><p>"<b>Are you okay?</b>" by voice, button or chat, in English or Bahasa Melayu.</p></div></div>
-          <div class="fstep f3"><span class="ic">3</span><div><h3>Escalate only if needed</h3><p>"Help", a red-flag symptom, or <b>no reply in 20 s</b> alerts every caregiver.</p></div></div>
-          <div class="fstep f4"><span class="ic">4</span><div><h3>Explain why</h3><p>Caregivers see <b>why</b> Kawan is worried, and what else it could be.</p></div></div>
+        <div>
+          <div class="sec-head"><span class="num">02</span><h2>Our solution</h2><span class="crit">Impact · Usability</span></div>
+          <div class="flow">
+            <div class="fstep f1"><span class="ic">1</span><div><h3>Notice</h3><p>Camera spots falls and unusual stillness; tracks medicines and readings.</p></div></div>
+            <div class="fstep f2"><span class="ic">2</span><div><h3>Check in</h3><p>"<b>Are you okay?</b>" by voice, button or chat, in English or Malay.</p></div></div>
+            <div class="fstep f3"><span class="ic">3</span><div><h3>Escalate only if needed</h3><p>"Help", a red-flag symptom or <b>no reply in 20 s</b> alerts caregivers.</p></div></div>
+            <div class="fstep f4"><span class="ic">4</span><div><h3>Explain why</h3><p>Caregivers see <b>why</b>, and what else it could be.</p></div></div>
+          </div>
         </div>
-        <div class="pills"><span class="pill">No wearables</span><span class="pill">No button to press</span><span class="pill">Works offline</span><span class="pill">English · Bahasa Melayu</span></div>
-      </section>
-    </div>
+      </div>
+      <div class="versus">
+        <div class="lane old">
+          <div class="label">Conventional alarm · pendant or panic button</div>
+          <div class="chain"><span class="chip">Person falls</span><span class="arr">→</span><span class="chip">They must press the button</span><span class="arr">→</span><span class="chip bad"><span>Hurt or confused: alarm mostly unused<sup class="ref">3</sup>, no one knows</span></span></div>
+        </div>
+        <div class="lane new">
+          <div class="label">Kawan · proactive check-in · no panic button, no wearable</div>
+          <div class="chain"><span class="chip">Webcam notices the fall</span><span class="arr">→</span><span class="chip">"Are you okay?"</span><span class="arr">→</span><span class="chip good">"Help" or no reply in 20 s: caregivers alerted, with reasons</span></div>
+        </div>
+      </div>
+    </section>
 
     <!-- ================= 03 HOW IT WORKS ================= -->
     <section>
       <div class="sec-head"><span class="num">03</span><h2>How it works</h2><span class="crit">Technical execution</span></div>
-      <div class="row" style="grid-template-columns: 1.32fr 1fr; gap: 5mm;">
+      <div class="row" style="grid-template-columns: 1.1fr 1fr; gap: 5mm;">
         <div class="card diagram">
           <svg viewBox="0 0 1000 470" font-family="Jakarta, sans-serif">
             <defs>
               <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#12897c"/></marker>
               <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d64045"/></marker>
             </defs>
-            <g font-family="Mono, monospace" font-size="14" font-weight="700" letter-spacing="1.4" fill="#647a84">
-              <text x="15" y="24">ON THE DEVICE (BROWSER)</text>
-              <text x="340" y="24">KAWAN HUB (PYTHON · FASTAPI)</text>
+            <g font-family="Mono, monospace" font-size="14" font-weight="700" letter-spacing="1.4" fill="#5c727c">
+              <text x="15" y="24">BROWSER (ON THE DEVICE)</text>
+              <text x="340" y="24">KAWAN HUB · PYTHON (SAME PC)</text>
               <text x="770" y="24">PEOPLE</text>
             </g>
             <!-- device -->
             <rect x="15" y="36" width="280" height="424" rx="16" fill="#e6f4f1"/>
             <rect x="30" y="52" width="250" height="98" rx="11" fill="#fff" stroke="#2fb8a8" stroke-width="2.5"/>
             <text x="46" y="82" font-size="21" font-weight="750" fill="#0b1a24">Webcam → MediaPipe</text>
-            <text x="46" y="108" font-size="15.5" fill="#3a5260">on-device pose AI, 15 frames/s</text>
-            <text x="46" y="134" font-size="15.5" fill="#12897c" font-weight="750">video never leaves the device</text>
+            <text x="46" y="108" font-size="15.5" fill="#344c59">pose AI in the browser, 15 fps</text>
+            <text x="46" y="134" font-size="15.5" fill="#12897c" font-weight="750">raw video stays in the browser</text>
             <rect x="30" y="162" width="250" height="60" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
             <text x="46" y="188" font-size="19" font-weight="750" fill="#0b1a24">Voice · buttons · chat</text>
-            <text x="46" y="210" font-size="14.5" fill="#3a5260">"Hey Kawan", English / Malay</text>
+            <text x="46" y="210" font-size="14.5" fill="#344c59">"Hey Kawan", English / Malay</text>
             <rect x="30" y="234" width="250" height="60" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
             <text x="46" y="260" font-size="19" font-weight="750" fill="#0b1a24">Readings</text>
-            <text x="46" y="282" font-size="14.5" fill="#3a5260">BP, SpO₂, temperature, devices</text>
+            <text x="46" y="282" font-size="14.5" fill="#344c59">typed in, or posted by a device</text>
             <rect x="30" y="306" width="250" height="140" rx="11" fill="#0b1a24"/>
             <text x="46" y="336" font-size="19" font-weight="750" fill="#fff">Companion screen</text>
             <text x="46" y="362" font-size="14.5" fill="#9fe8da">speaks every prompt</text>
@@ -283,7 +345,7 @@ table.heard td:first-child { color: var(--ink); width: 42%; }
             <text x="46" y="431" font-size="14.5" fill="#9fe8da">cited health answers</text>
             <!-- device ↔ hub -->
             <path d="M282 101 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
-            <text x="288" y="91" font-size="12.5" font-family="Mono" fill="#12897c" font-weight="700">33 pts</text>
+            <text x="286" y="90" font-size="12" font-family="Mono" fill="#12897c" font-weight="700">33 pts</text>
             <path d="M282 192 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
             <path d="M282 264 H336" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
             <path d="M338 376 H286" stroke="#12897c" stroke-width="3.5" marker-end="url(#ah)" fill="none"/>
@@ -306,34 +368,34 @@ table.heard td:first-child { color: var(--ink); width: 42%; }
             <text x="374" y="349" font-size="15.5" fill="#ff9a9d">red-flag symptom → escalate now</text>
             <rect x="356" y="384" width="364" height="62" rx="11" fill="#fff" stroke="#b5e04a" stroke-width="2.5" stroke-dasharray="7 5"/>
             <text x="374" y="410" font-size="16.5" font-weight="750" fill="#0b1a24">Questions only → cited health library</text>
-            <text x="374" y="434" font-size="14" fill="#3a5260">104 topics (MOH, WHO, NHS) · optional Claude AI</text>
+            <text x="374" y="434" font-size="14" fill="#344c59">104 topics (MOH, WHO, NHS) · optional Claude AI</text>
             <!-- hub → people -->
             <path d="M722 306 H766" stroke="#d64045" stroke-width="3.5" marker-end="url(#ahr)" fill="none"/>
             <rect x="770" y="36" width="215" height="424" rx="16" fill="#fbecec"/>
             <rect x="784" y="52" width="187" height="152" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
             <text x="800" y="80" font-size="19" font-weight="750" fill="#0b1a24">Caregivers</text>
-            <text x="800" y="105" font-size="14.5" fill="#3a5260">live dashboard</text>
-            <text x="800" y="128" font-size="14.5" fill="#3a5260">alert + reasons</text>
-            <text x="800" y="151" font-size="14.5" fill="#3a5260">acknowledge / resolve</text>
-            <text x="800" y="174" font-size="14.5" fill="#3a5260">trends &amp; history</text>
+            <text x="800" y="105" font-size="14.5" fill="#344c59">live dashboard</text>
+            <text x="800" y="128" font-size="14.5" fill="#344c59">alert + reasons</text>
+            <text x="800" y="151" font-size="14.5" fill="#344c59">acknowledge / resolve</text>
+            <text x="800" y="174" font-size="14.5" fill="#344c59">trends &amp; history</text>
             <rect x="784" y="216" width="187" height="112" rx="11" fill="#d64045"/>
             <text x="800" y="245" font-size="19" font-weight="750" fill="#fff">Telegram</text>
-            <text x="800" y="270" font-size="14.5" fill="#ffe1e2">alerts on every</text>
+            <text x="800" y="270" font-size="14.5" fill="#ffe1e2">escalations to every</text>
             <text x="800" y="292" font-size="14.5" fill="#ffe1e2">caregiver's phone</text>
-            <text x="800" y="316" font-size="12" font-family="Mono" fill="#fff">optional</text>
+            <text x="800" y="316" font-size="12" font-family="Mono" fill="#fff">optional · internet</text>
             <rect x="784" y="340" width="187" height="106" rx="11" fill="#fff" stroke="#dde3df" stroke-width="2"/>
             <text x="800" y="368" font-size="19" font-weight="750" fill="#0b1a24">Doctor</text>
-            <text x="800" y="393" font-size="14.5" fill="#3a5260">printable visit report</text>
-            <text x="800" y="416" font-size="14.5" fill="#3a5260">adherence, vitals,</text>
-            <text x="800" y="438" font-size="14.5" fill="#3a5260">symptoms, alerts</text>
+            <text x="800" y="393" font-size="14.5" fill="#344c59">printable visit report</text>
+            <text x="800" y="416" font-size="14.5" fill="#344c59">adherence, vitals,</text>
+            <text x="800" y="438" font-size="14.5" fill="#344c59">symptoms, alerts</text>
           </svg>
         </div>
         <div class="card fall">
-          <div class="lead">Fall detection on a <span style="color:var(--teal)">real fall video</span></div>
-          <img src="assets/figures/fall-sequence.svg" alt="MediaPipe skeleton of a real fall at four moments">
+          <div class="lead">Fall detection on a <span style="color:var(--teal)">recorded fall clip</span></div>
+          <img src="assets/figures/fall-sequence.svg" alt="MediaPipe skeleton of a recorded fall at four moments">
           <div class="rule">
             <span class="n">1</span><div><b>Upright</b>, then</div>
-            <span class="n">2</span><div><b>hips drop fast:</b> ≥ 0.6 of their own torso length in ≤ 1.5 s (works near or far)</div>
+            <span class="n">2</span><div><b>hips drop fast:</b> ≥ 0.6 of their own torso length in ≤ 1.5 s</div>
             <span class="n">3</span><div><b>body horizontal</b> (≥ 60°) or out of view</div>
             <span class="n">4</span><div><b>still down</b> after 2 s → check in</div>
           </div>
@@ -343,93 +405,120 @@ table.heard td:first-child { color: var(--ink); width: 42%; }
       </div>
     </section>
 
-    <!-- ================= 04 FEATURES ================= -->
+    <!-- ================= 04 THE APP (SCREENS) ================= -->
     <section>
-      <div class="sec-head"><span class="num">04</span><h2>Key features</h2><span class="crit">Usability · real app screens</span></div>
-      <div class="features">
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/fall-alert.png" alt="Caregiver alert with reasons"></div><div class="txt"><h3>Fall &amp; inactivity detection</h3><p>Every alert lists its reasons and "what else it could be". Inactivity is judged against this person's normal.</p></div></div>
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/phone-bm.png" alt="Kawan on a phone in Bahasa Melayu"></div><div class="txt"><h3>Check in, in English or Malay</h3><p>Big buttons, spoken prompts, "Hey Kawan" voice. Here on a phone: chest pain reported in Malay → "call 999", caregiver alerted.</p></div></div>
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/adherence.png" alt="Medication adherence chart"></div><div class="txt"><h3>Medicine reminders</h3><p>Spoken reminders, one tap for "I took it", missed-dose notice to caregivers, adherence chart.</p></div></div>
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/vitals.png" alt="Live vital signs chart"></div><div class="txt"><h3>Vitals &amp; daily check-in</h3><p>Alerts need sustained readings. Check-ins give non-diagnostic triage: self-care → see a doctor → call 999.</p></div></div>
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/answer.png" alt="Health answer with its NHS source"></div><div class="txt"><h3>Health answers with sources</h3><p>104 topics from MOH Malaysia guidelines, WHO and NHS. The source is shown under every answer.</p></div></div>
-        <div class="card feat"><div class="shot"><img src="assets/screens/tiles/checkins.png" alt="Daily check-in trends"></div><div class="txt"><h3>Caregiver dashboard &amp; trends</h3><p>Live status, timeline, mood/pain/sleep trends, alerts to several caregivers' phones, doctor report.</p></div></div>
+      <div class="sec-head"><span class="num">04</span><h2>The app</h2><span class="crit">Usability · real screens, demo data</span></div>
+      <div class="screens">
+        <div class="card scr"><div class="img"><img src="assets/screens/tiles/fall-alert.png" alt="Caregiver fall alert with reasons"></div><div class="cap"><h3>Fall alert, with reasons</h3><p>Why it fired, what else it could be.</p></div></div>
+        <div class="card scr"><div class="img"><img src="assets/screens/tiles/phone-bm.png" alt="Kawan on a phone in Bahasa Melayu"></div><div class="cap"><h3>On a phone</h3><p>Bahasa Melayu</p></div></div>
+        <div class="card scr"><div class="img"><img src="assets/screens/tiles/dashboard.png" alt="Caregiver dashboard with vitals, adherence, activity and check-ins"></div><div class="cap"><h3>Caregiver dashboard</h3><p>Vitals, adherence, activity, check-ins.</p></div></div>
+        <div class="card also">
+          <div class="label">Also built and working</div>
+          <ul>
+            <li><b>Spoken reminders</b>, missed-dose notice</li>
+            <li><b>Vitals</b> with sustained-reading alerts</li>
+            <li><b>Daily check-in</b> triage, up to "call 999"</li>
+            <li><b>104 cited health topics</b>, EN &amp; BM</li>
+            <li><b>Doctor report</b>, one click</li>
+          </ul>
+        </div>
       </div>
     </section>
 
-    <!-- ================= 05 SAFETY + 06 RESULTS ================= -->
-    <div class="row" style="grid-template-columns: 0.98fr 2.02fr; gap: 5.5mm;">
+    <!-- ================= 05 SAFE & PRIVATE + 06 OFFLINE ================= -->
+    <div class="row" style="grid-template-columns: 1.08fr 1fr; gap: 5.5mm;">
       <section class="card safety">
-        <div class="sec-head"><span class="num">05</span><h2>Safe by design</h2></div>
+        <div class="sec-head"><span class="num">05</span><h2>Safe &amp; private by design</h2></div>
         <ul>
-          <li><b>Rules decide, AI only explains.</b> The AI never sees a check-in reply.</li>
-          <li><b>Fails safe.</b> Unclear replies keep the timer running.</li>
-          <li><b>Explains itself:</b> why it fired and what else it could be.</li>
-          <li><b>Private &amp; offline:</b> only 33 body points leave the camera, no images are stored, and the core works without internet.</li>
-          <li><b>Honest data:</b> nothing invented; demo data is labelled SIMULATED.</li>
+          <li><b>Rules decide, AI only explains.</b> Check-in replies never go to the AI.</li>
+          <li><b>Fails safe.</b> "Okay, but my leg hurts" counts as help; unclear replies keep the timer running.</li>
+          <li><b>Explains itself:</b> every alert lists why it fired and what else it could be.</li>
         </ul>
-        <div class="quote">"Okay, but my leg hurts" → counts as HELP</div>
+        <div class="dataflow">
+          <div class="label">What leaves the browser</div>
+          <div class="dfrow"><span class="box">Camera video<br><b>stays in the browser</b></span><span class="arr">→</span><span class="box hot"><b>33 landmarks</b><br>x, y, visibility · 15/s</span><span class="arr">→</span><span class="box">Kawan hub<br><b>same PC by default</b></span></div>
+          <p>No video or images are sent or stored; the hub keeps only events and summaries. <b>One opt-in exception:</b> "Check my medicine" sends a single photo to Claude when tapped (needs an AI key).</p>
+        </div>
       </section>
-
-      <section>
-        <div class="sec-head"><span class="num">06</span><h2>Results</h2><span class="crit">Technical execution · Usability</span></div>
-        <div class="results">
-          <div class="card metric">
-            <div class="label">Fall detection · real videos<sup class="ref">5</sup></div>
-            <div class="big">27<small> / 30 real falls caught (90%)</small></div>
-            <div class="cap">The earlier frame-size rule caught 17/30. 13 of 40 everyday clips triggered a check-in, 11 of them people lying down on purpose: that's why Kawan <b>asks first</b>.</div>
-          </div>
-          <div class="card metric">
-            <div class="label">Engineering quality</div>
-            <div class="big">148<small> automated tests</small></div>
-            <div class="cap">117 backend · 19 frontend · 12 browser end-to-end, run by GitHub Actions on every push. Open source (MIT).</div>
-          </div>
-          <div class="card quotes">
-            <div class="label">Early informal feedback · 4 testers (3 friends and a parent)</div>
-            <div class="q">"The reminders are the part I'd use every day."</div>
-            <div class="q">"I don't need to read anything. I just talk to it and it talks back."</div>
-            <div class="q">"It noticed when I fell and asked if I was okay. That's reassuring when no one's home."</div>
-            <div class="q">"I asked what ibuprofen is and how it works, and finally understood it."</div>
-            <table class="heard">
-              <tr><th>What we heard</th><th>What we did / will do</th></tr>
-              <tr><td>2–3 caregivers want alerts on their phones</td><td><span class="done">✓ Done:</span> Telegram alerts go to every caregiver</td></tr>
-              <tr><td>Voice sometimes doesn't catch what's said</td><td>Big tap buttons as backup now; better speech recognition next</td></tr>
-              <tr><td>It knows less than general chatbots</td><td>Deliberate: cited sources only, so it can't invent medical facts</td></tr>
-              <tr><td>Cover emergencies beyond falls</td><td>Already alerts on red-flag symptoms and abnormal vitals; more planned</td></tr>
-            </table>
-          </div>
+      <section class="card offline">
+        <div class="head"><div class="sec-head" style="margin-bottom:0"><span class="num">06</span><h2>Offline &amp; online</h2></div></div>
+        <div class="col">
+          <h3><span class="dot" style="background:var(--green)"></span>Works without internet</h3>
+          <ul>
+            <li>Pose detection, fall &amp; inactivity rules</li>
+            <li>Check-ins by button and chat</li>
+            <li>Spoken prompts <small>(device voices)</small></li>
+            <li>Reminders, vitals, daily check-in</li>
+            <li>104-topic health library</li>
+            <li>Dashboard &amp; report <small>(on the hub PC)</small></li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3><span class="dot" style="background:var(--amber)"></span>Needs internet</h3>
+          <ul>
+            <li>Voice input <small>(browser speech service)</small></li>
+            <li>Telegram alerts to phones</li>
+            <li>Claude AI answers &amp; pill check <small>(optional, API key)</small></li>
+            <li>Phones &amp; remote caregivers <small>(secure link)</small></li>
+          </ul>
         </div>
       </section>
     </div>
 
-    <!-- ================= 07 FEASIBILITY ================= -->
+    <!-- ================= 07 RESULTS ================= -->
     <section>
-      <div class="sec-head"><span class="num">07</span><h2>Feasibility &amp; next steps</h2><span class="crit">Feasibility</span></div>
+      <div class="sec-head"><span class="num">07</span><h2>Results</h2><span class="crit">Technical execution · Usability</span></div>
+      <div class="results">
+        <div class="card eval">
+          <div class="label">Preliminary test · fall detector on recorded clips<sup class="ref">5</sup></div>
+          <div class="evnums">
+            <div class="evnum"><div class="big">27<small> / 30</small></div><p><b>fall clips detected (90%)</b>. The earlier frame-size rule: 17/30.</p></div>
+            <div class="evnum amber"><div class="big">13<small> / 40</small></div><p><b>everyday clips triggered a check-in</b>; 11 of them show people lying down on purpose.</p></div>
+          </div>
+          <div class="meaning"><span class="chip ck">A check-in asks the person</span><span class="arr">→</span><span class="chip">"I'm okay" = low-priority note</span><span class="arr">→</span><span class="chip esc">Phones alerted only on "help" or no reply</span></div>
+          <p class="cond"><b>Test conditions:</b> UR Fall dataset, 70 lab clips of actors, one room, side-view camera; same pose model and settings as the app; each clip's last frame held 10 s (person stays down).</p>
+          <p class="disclose"><b>Not real-world accuracy.</b> Preliminary lab testing; not clinically validated.</p>
+        </div>
+        <div class="right-col">
+          <div class="card tests"><div class="big">148</div><p><b>automated tests</b>: 117 backend · 19 frontend · 12 browser end-to-end, run by GitHub Actions on every push.</p></div>
+          <div class="card quotes">
+            <div class="label">Early informal feedback · 4 testers (3 friends and a parent)</div>
+            <div class="qs">
+              <div class="q">"The reminders are the part I'd use every day."</div>
+              <div class="q">"I don't need to read anything. I just talk to it and it talks back."</div>
+              <div class="q">"It noticed when I fell and asked if I was okay."</div>
+              <div class="q">"I asked what ibuprofen is and finally understood it."</div>
+            </div>
+            <table class="heard">
+              <tr><th>What we heard</th><th>What we did / will do</th></tr>
+              <tr><td>Alerts on 2–3 caregivers' phones</td><td><span class="done">✓ Done:</span> Telegram to every caregiver</td></tr>
+              <tr><td>Voice sometimes misses words</td><td>Tap buttons as backup; better speech next</td></tr>
+              <tr><td>Knows less than chatbots</td><td>Deliberate: cited sources only</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 08 FEASIBILITY ================= -->
+    <section>
+      <div class="sec-head"><span class="num">08</span><h2>Feasibility &amp; next steps</h2><span class="crit">Feasibility</span></div>
       <div class="feas">
         <div class="card">
           <h3>Ready to run today</h3>
           <ul>
-            <li><b>Hardware:</b> any laptop or tablet with a webcam + Chrome/Edge. Nothing to buy.</li>
+            <li><b>Hardware:</b> a laptop or tablet with a webcam + Chrome/Edge.</li>
             <li><b>Cost:</b> free open-source stack; AI and Telegram optional.</li>
-            <li><b>Setup:</b> one command; a secure link opens it on phones.</li>
-            <li><b>Maintainable:</b> thresholds in one config file; 148 tests on every change.</li>
+            <li><b>Setup:</b> one command; a secure link for phones.</li>
           </ul>
         </div>
         <div class="card">
           <h3>Roadmap</h3>
           <div class="road">
-            <div class="stage"><div class="k">NOW</div><p>Working prototype with all features above; tried by 4 early users.</p></div>
-            <div class="stage"><div class="k">NEXT</div><p>Caregiver login · hosted multi-household version · push notifications · smartwatch/oximeter · better speech.</p></div>
-            <div class="stage"><div class="k">LATER</div><p>Clinical validation with healthcare partners · more emergency types · low-cost tablet kiosk.</p></div>
+            <div class="stage"><div class="k">NOW</div><p>Working prototype; tried by 4 early users.</p></div>
+            <div class="stage"><div class="k">NEXT</div><p>Caregiver login · hosted multi-household version · push alerts · device integration.</p></div>
+            <div class="stage"><div class="k">LATER</div><p>Clinical validation with healthcare partners · more emergency types.</p></div>
           </div>
-        </div>
-        <div class="card limits">
-          <h3>Honest limitations</h3>
-          <ul>
-            <li>Detection rules are not clinically validated.</li>
-            <li>One camera, one person in view.</li>
-            <li>The browser tab must stay open.</li>
-            <li>Not a medical device.</li>
-          </ul>
         </div>
       </div>
     </section>
@@ -440,15 +529,14 @@ table.heard td:first-child { color: var(--ink); width: 42%; }
     <div class="refs">
       <h4>REFERENCES</h4>
       <ol>
-        <li>Institute for Public Health, MOH Malaysia. <i>National Health and Morbidity Survey 2023: NCD Fact Sheet.</i> 2024.</li>
-        <li>World Health Organization. <i>Falls — Fact sheet.</i> 2021.</li>
-        <li>Fleming J, Brayne C. Inability to get up after falling… people over 90. <i>BMJ</i> 2008;337:a2227.</li>
-        <li>World Health Organization. <i>Adherence to Long-Term Therapies: Evidence for Action.</i> 2003.</li>
-        <li>Kwolek B, Kepski M. Human fall detection on embedded platform… <i>Comput Methods Programs Biomed</i> 2014;117(3):489–501. UR Fall Detection Dataset, CC BY-NC-SA 4.0.</li>
-        <li>Google. <i>MediaPipe Pose Landmarker.</i> ai.google.dev/edge/mediapipe</li>
-        <li>MOH Malaysia Clinical Practice Guidelines (T2DM 2020, Hypertension 2018 and others), as cited in the app's library.</li>
+        <li>IPH, MOH Malaysia. <i>NHMS 2023: NCD Fact Sheet.</i> 2024.</li>
+        <li>WHO. <i>Falls — Fact sheet.</i> 2021.</li>
+        <li>Fleming J, Brayne C. Inability to get up after falling (people over 90). <i>BMJ</i> 2008;337:a2227.</li>
+        <li>WHO. <i>Adherence to Long-Term Therapies.</i> 2003.</li>
+        <li>Kwolek B, Kepski M. <i>Comput Methods Programs Biomed</i> 2014;117:489–501 (UR Fall dataset, CC BY-NC-SA 4.0).</li>
+        <li>Google. <i>MediaPipe Pose Landmarker.</i></li>
       </ol>
-      <p class="disclaimer"><b>Prototype for UTP CodeFest '26 — not a medical device. In an emergency call 999.</b> Built with the help of Claude Code (AI coding assistant), as disclosed under competition rules.</p>
+      <p class="disclaimer"><b>Prototype — not a medical device. In an emergency call 999.</b> One camera, one person in view. Health library from MOH Malaysia CPGs, WHO and NHS. Built with help from Claude Code (AI coding assistant), as the rules require us to disclose.</p>
     </div>
     <div class="qrs">
       <div class="qr"><div class="box"><img src="assets/qr/video.svg" alt="QR: demo video"></div><span>DEMO VIDEO</span></div>
