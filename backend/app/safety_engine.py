@@ -178,13 +178,23 @@ class SafetyEngine:
                 )
         return events
 
-    def acknowledge(self, incident_id: int, now: float) -> list[Event]:
+    def acknowledge(self, incident_id: int, now: float, by: str = "") -> list[Event]:
         inc = self.incidents[incident_id]
         if inc.status != "open":
             return []
         inc.status = "acknowledged"
         inc.updated_t = now
-        return [Event(now, "acknowledged", "Caregiver acknowledged the alert", "caregiver", inc.id)]
+        if by:
+            inc.notes.append(f"Acknowledged by {by}")
+        return [
+            Event(
+                now,
+                "acknowledged",
+                "Caregiver acknowledged the alert" + (f" ({by})" if by else ""),
+                "caregiver",
+                inc.id,
+            )
+        ]
 
     def resolve(self, incident_id: int, now: float, note: str = "") -> list[Event]:
         inc = self.incidents[incident_id]

@@ -112,18 +112,20 @@ Optional: copy `.env.example` to `backend/.env` and add `ANTHROPIC_API_KEY` (Cla
 
 <details><summary>Phone alerts for one or more caregivers (Telegram)</summary>
 
-1. In Telegram, message **@BotFather**, send `/newbot` and copy the bot token.
-2. **Each caregiver** opens the new bot and presses **Start** (a bot can only message people who started it).
-3. Get each caregiver's chat ID, for example by messaging **@userinfobot**.
-4. In `backend/.env`:
-   ```
-   TELEGRAM_BOT_TOKEN=123456:ABC...
-   TELEGRAM_CHAT_ID=111111111,222222222,333333333
-   ```
-   List as many chat IDs as you like, separated by commas. A group chat ID (starts with `-100`) also works.
-5. Restart Kawan. The Caregiver page shows **Telegram alerts on · 3 caregivers**.
+No file editing needed:
 
-Every caregiver gets every escalation and caregiver notice. If one chat ID is wrong, the others still get the alert.
+1. In Telegram, message **@BotFather**, send `/newbot` and copy the bot token.
+2. On the Caregiver page, open **Telegram alerts**, paste the token and press **Connect**. Kawan checks it with Telegram before saving it on this computer.
+3. Open the **private caregiver link** shown there on each caregiver's phone and tap **Start**. Each link works for one person; a new one appears after someone joins. Someone who finds the bot without a link gets nothing.
+4. Press **Send test message**.
+
+What caregivers get:
+- Every escalation and caregiver notice, with the reasons. Escalations have an **✅ I'm on it** button. Tapping it acknowledges the alert on the dashboard, tells the person at home that help has seen it, and tells the other caregivers who is handling it.
+- `/status` returns how the person is right now (alert state, camera, next medicine). `/stop` unsubscribes that chat.
+
+Kawan polls Telegram for replies, so it needs internet but no public URL, tunnel or webhook. Only one running Kawan can use a given bot at a time. If one chat fails, the others still get the alert.
+
+The older `.env` setup still works and takes priority: `TELEGRAM_BOT_TOKEN=…` and `TELEGRAM_CHAT_ID=111111111,222222222` (a group chat ID starting with `-100` also works).
 </details>
 
 <details><summary>Manual / development setup</summary>

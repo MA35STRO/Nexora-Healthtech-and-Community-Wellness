@@ -46,7 +46,10 @@ class Hub:
         self.cfg = cfg
         self.store = store or Database(cfg.db_path)
         self.ai = ai or self._ai_from_saved_key()
-        self.notifier = notifier or Notifier(cfg)
+        self.notifier = notifier or Notifier(cfg, self.store)
+        self.notifier.on_ack = self.acknowledge_from_telegram
+        self.notifier.status = self.status_text
+        self.notifier.on_change = self._bump
         self.lock = threading.RLock()
         self._demo_stop = threading.Event()
         self._build()
@@ -285,6 +288,66 @@ class Hub:
         with self.lock:
             self._record(self.engine.acknowledge(iid, time.time()))
 
+    def acknowledge_from_telegram(self, iid: int, who: str) -> tuple[bool, str]:
+        """A caregiver tapped "I'm on it" in Telegram. Tell the person at home that help has seen it."""
+        with self.lock:
+            inc = self.engine.incidents.get(iid)
+            if inc is None:
+                return False, f"Alert #{iid} is no longer open."
+            events = self.engine.acknowledge(iid, time.time(), by=f"{who}, via Telegram")
+            if not events:
+                return False, f"Alert #{iid} was already {inc.status}."
+            self._record(events)
+            self._say(
+                "assistant",
+                f"{who} telah melihat amaran dan sedang mengambil tindakan."
+                if self.engine.lang == "ms"
+                else f"{who} has seen the alert and is responding.",
+                kind="alert",
+            )
+            return True, "Thanks — marked as acknowledged. They've been told you're responding."
+
+    def status_text(self) -> str:
+        """Plain-text summary for the caregiver's /status command. Only facts the app holds."""
+        with self.lock:
+            now = time.time()
+            name = self.profile()["user_name"] or "your family member"
+            lines = [
+                f"Kawan — {name}",
+                {
+                    "monitoring": "✅ All clear — no open alerts.",
+                    "check_in": "⏳ Kawan is checking in with them right now.",
+                    "attention": "⚠️ Something was noticed and needs a look.",
+                    "escalated": "🚨 ALERT — please check on them now.",
+                }[self.engine.state],
+            ]
+            a = self.engine.active
+            if a:
+                lines.append(
+                    f"Alert #{a.id}: {a.kind.replace('_', ' ')} at {_hhmm(a.created_t)} ({a.status})"
+                    + (f" — {a.reasons[0]}" if a.reasons else "")
+                )
+            o = self.last_obs
+            if o is not None and now - o.t < 5 and o.source == "camera":
+                lines.append(f"Camera: {o.posture if o.person else 'nobody in view'} right now.")
+            else:
+                lines.append("Camera: not watching right now (the Companion page is closed).")
+            if self.inactivity.still_since and now - self.inactivity.still_since > 60:
+                lines.append(f"Still for {round((now - self.inactivity.still_since) / 60)} min.")
+            nxt = self.meds.next_dose(now)
+            if nxt:
+                lines.append(
+                    f"Next medicine: {nxt['name']} {nxt['dose']} at {_hhmm(nxt['due_t'])} ({nxt['status']})."
+                )
+            taken = sum(1 for d in self.meds.today(now) if d["status"] == "taken")
+            total = len(self.meds.today(now))
+            if total:
+                lines.append(f"Medicines today: {taken} of {total} taken.")
+            return "\n".join(lines)
+
+    def _bump(self):
+        self.version += 1
+
     def resolve(self, iid: int, note: str = ""):
         with self.lock:
             self._record(self.engine.resolve(iid, time.time(), note))
@@ -415,10 +478,12 @@ class Hub:
     def reset(self):
         self.stop_demo()
         with self.lock:
-            saved_key = self.store.kv_get("anthropic_api_key")  # "reset data" keeps the AI connection
+            # "reset data" keeps the AI and Telegram connections
+            kept = {k: self.store.kv_get(k) for k in ("anthropic_api_key", "telegram")}
             self.store.clear()
-            if saved_key:
-                self.store.kv_set("anthropic_api_key", saved_key)
+            for k, v in kept.items():
+                if v:
+                    self.store.kv_set(k, v)
             self._build()
             self.version += 1
 
@@ -512,10 +577,7 @@ class Hub:
                     "key_source": self.ai_key_source(),
                     "topics": len(health_library.topics()),
                 },
-                "notify": {
-                    "telegram": self.notifier.enabled,
-                    "telegram_recipients": len(self.notifier.chat_ids) if self.notifier.enabled else 0,
-                },
+                "notify": self.notifier.info(),
                 "profile": self.profile(),
                 "config": {"checkin_timeout_s": self.cfg.checkin_timeout_s},
             }
@@ -615,10 +677,14 @@ class Hub:
         for e in events:
             self.store.add_event(e)
             if e.kind in ("escalated", "caregiver_notice"):
-                icon = "🚨" if e.kind == "escalated" else "ℹ️"
-                self.notifier.send(
-                    f"{icon} Kawan — {self.profile()['user_name'] or 'your family member'}: {e.message}"
-                )
+                urgent = e.kind == "escalated"
+                inc = self.engine.incidents.get(e.incident_id) if e.incident_id else None
+                text = f"{'🚨' if urgent else 'ℹ️'} Kawan — {self.profile()['user_name'] or 'your family member'}: {e.message}"
+                if urgent and inc and inc.reasons:
+                    text += "\n\nWhy: " + "; ".join(inc.reasons[:3])
+                if urgent:
+                    text += f"\nTime: {_hhmm(e.t)} · Emergency: 999"
+                self.notifier.send(text, incident_id=e.incident_id, ack_button=urgent)
         for inc in self.engine.incidents.values():
             self.store.save_incident(inc)
         self.version += 1

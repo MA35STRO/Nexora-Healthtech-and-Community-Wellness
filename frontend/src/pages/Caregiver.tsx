@@ -332,6 +332,10 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
           <ProfileEditor snap={snap} />
         </section>
 
+        <section className="card span-12" id="telegram">
+          <TelegramConnection snap={snap} />
+        </section>
+
         <section className="card span-12" id="ai">
           <AIConnection snap={snap} />
         </section>
@@ -591,6 +595,163 @@ function AIConnection({ snap }: { snap: Snapshot }) {
             The key is stored only in this computer's Kawan database. Don't share the caregiver page publicly
             while a key is connected.
           </p>
+        </>
+      )}
+      {msg && (
+        <p className={`chip ${msg.ok ? 'ok' : 'danger'}`} style={{ whiteSpace: 'normal', marginTop: 10 }}>
+          {msg.text}
+        </p>
+      )}
+    </>
+  )
+}
+
+function TelegramConnection({ snap }: { snap: Snapshot }) {
+  const n = snap.notify
+  const [token, setToken] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const run = async (fn: () => Promise<{ ok: boolean; message: string }>, after?: () => void) => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      const r = await fn()
+      setMsg({ ok: r.ok, text: r.message })
+      if (r.ok) after?.()
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach the Kawan hub.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+  const connected = n.token_source !== null
+  return (
+    <>
+      <div className="card-head">
+        <h2>Telegram alerts (optional)</h2>
+        <span className={`chip ${n.telegram ? 'ok' : connected ? 'warn' : ''}`}>
+          {n.telegram
+            ? `On · ${n.telegram_recipients} ${n.telegram_recipients === 1 ? 'caregiver' : 'caregivers'}`
+            : connected
+              ? 'Bot connected · no caregiver linked yet'
+              : 'Off'}
+        </span>
+        {connected && (
+          <span className={`chip ${n.listening ? 'ok' : 'warn'}`}>
+            {n.listening ? 'listening for replies' : 'not listening'}
+          </span>
+        )}
+      </div>
+      <p className="small" style={{ marginTop: 0 }}>
+        Sends urgent alerts to caregivers' phones, even when the dashboard is closed. Each alert has an{' '}
+        <b>“I'm on it”</b> button: tapping it acknowledges the alert here and tells the person at home that
+        help has seen it. Caregivers can also send <code>/status</code> any time. Needs internet; no public
+        URL or tunnel.
+      </p>
+      {!connected ? (
+        <>
+          <ol className="small" style={{ margin: '0 0 10px', paddingLeft: 20 }}>
+            <li>
+              In Telegram, open{' '}
+              <a href="https://t.me/BotFather" target="_blank" rel="noreferrer">
+                @BotFather
+              </a>{' '}
+              and send <code>/newbot</code>. Pick any name (e.g. “Kawan Alerts”).
+            </li>
+            <li>
+              BotFather replies with a token like <code>123456789:AA…</code>. Copy it.
+            </li>
+            <li>Paste it below and press Connect. Kawan tests it before saving it.</li>
+          </ol>
+          <div className="row">
+            <input
+              aria-label="Telegram bot token"
+              type="password"
+              placeholder="123456789:AA..."
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              style={{ ...inputStyle, minWidth: 260 }}
+              autoComplete="off"
+            />
+            <button
+              className="btn primary"
+              disabled={busy || !token.trim()}
+              onClick={() =>
+                run(
+                  () => api.connectTelegram(token),
+                  () => setToken(''),
+                )
+              }
+            >
+              {busy ? 'Testing…' : 'Connect'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="small" style={{ marginBottom: 8 }}>
+            Bot: <b>{n.bot ? `@${n.bot}` : '…'}</b>
+            {n.token_source === 'env' && <span className="muted"> (token from backend/.env)</span>}
+          </div>
+          {n.link && (
+            <div className="small" style={{ marginBottom: 10 }}>
+              <b>Add a caregiver:</b> open this private link on their phone and tap <b>Start</b>. Each link
+              works once, so a new one appears after someone joins.
+              <div className="row" style={{ marginTop: 6 }}>
+                <a className="btn small primary" href={n.link} target="_blank" rel="noreferrer">
+                  Open in Telegram
+                </a>
+                <code style={{ wordBreak: 'break-all' }}>{n.link}</code>
+                <button className="btn small ghost" onClick={() => navigator.clipboard?.writeText(n.link!)}>
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="small" style={{ fontWeight: 800 }}>
+            Linked caregivers
+          </div>
+          {n.chats.length ? (
+            n.chats.map((c) => (
+              <div key={c.id} className="row" style={{ justifyContent: 'space-between', maxWidth: 520 }}>
+                <span className="small">{c.name}</span>
+                {!c.env && (
+                  <button className="btn small ghost" onClick={() => api.removeTelegramChat(c.id)}>
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="small muted" style={{ margin: '4px 0' }}>
+              Nobody yet. Open the link above on a caregiver's phone.
+            </p>
+          )}
+          <div className="row" style={{ marginTop: 10 }}>
+            <button
+              className="btn small"
+              disabled={busy || !n.chats.length}
+              onClick={() => run(() => api.testTelegram())}
+            >
+              Send test message
+            </button>
+            {n.token_source === 'app' && (
+              <button
+                className="btn small ghost"
+                onClick={() =>
+                  confirm('Disconnect the Telegram bot? Caregivers will stop getting alerts.') &&
+                  api.disconnectTelegram()
+                }
+              >
+                Disconnect bot
+              </button>
+            )}
+          </div>
+          {n.error && (
+            <p className="chip warn" style={{ whiteSpace: 'normal', marginTop: 10 }}>
+              {n.error}
+            </p>
+          )}
         </>
       )}
       {msg && (

@@ -62,7 +62,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 | [`ai_answers.py`](../backend/app/ai_answers.py) | Answers health questions: uses Claude (if an API key is set) grounded in the health library, or the library alone offline. Always returns its sources. |
 | [`health_library.py`](../backend/app/health_library.py) + [`data/health_library.json`](../backend/app/data/health_library.json) | 104 reviewed health topics in English and Malay, each with its source (MOH Malaysia guidelines, WHO, NHS…), and the search that finds the right one. |
 | [`database.py`](../backend/app/database.py) | Saves events, alerts, readings, doses and settings in a small SQLite file. Never stores video. |
-| [`telegram_alerts.py`](../backend/app/telegram_alerts.py) | Optional: sends caregiver alerts to a phone via a Telegram bot. |
+| [`telegram_alerts.py`](../backend/app/telegram_alerts.py) | Optional Telegram bot: connected from the Caregiver page, private one-time links for caregivers, alerts with an "I'm on it" button, `/status` and `/stop`. Long-polls, so no public URL is needed. |
 | [`demo_scenarios.py`](../backend/app/demo_scenarios.py) | The demo buttons: scripted body movements and replies that run through the **real** detectors. |
 | [`demo_history.py`](../backend/app/demo_history.py) | Optional, off by default: a week of clearly-labelled SIMULATED history for demos. |
 

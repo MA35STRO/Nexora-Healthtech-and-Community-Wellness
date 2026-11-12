@@ -34,8 +34,10 @@ def _ticker(stop: threading.Event):
 async def lifespan(_app):
     stop = threading.Event()
     threading.Thread(target=_ticker, args=(stop,), daemon=True).start()
+    hub.notifier.start()  # listens for caregiver taps / commands once a bot is connected
     yield
     stop.set()
+    hub.notifier.stop()
     hub.stop_demo()
     hub.inactivity.flush()
 
@@ -128,6 +130,38 @@ def ai_connect(body: AIKeyIn):
 @app.delete("/api/ai")
 def ai_disconnect():
     return hub.disconnect_ai()
+
+
+class TelegramIn(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+
+
+@app.post("/api/telegram")
+def telegram_connect(body: TelegramIn):
+    """Connect a Telegram bot. The token is tested with getMe, saved only on this computer, never sent back."""
+    if hub.notifier.token_source == "env":
+        return {
+            "ok": False,
+            "message": "A bot token is already set in backend/.env. Edit that file to change it.",
+        }
+    return hub.notifier.connect(body.token)
+
+
+@app.delete("/api/telegram")
+def telegram_disconnect():
+    return hub.notifier.disconnect()
+
+
+@app.post("/api/telegram/test")
+def telegram_test():
+    return hub.notifier.send_test()
+
+
+@app.delete("/api/telegram/chats/{chat_id}")
+def telegram_remove_chat(chat_id: str):
+    if not hub.notifier.remove_chat(chat_id):
+        raise HTTPException(404, "Caregiver chat not found (chats from .env can only be removed there)")
+    return {"ok": True}
 
 
 @app.get("/api/state")
