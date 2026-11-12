@@ -1113,3 +1113,24 @@ input[type='range'] {
   font-family: inherit;
   font-size: 0.9em;
 }
+
+/* looping alarm banner on the person's screen */
+.alarm-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 2px solid var(--danger);
+  animation: alarm-flash 1.6s ease-in-out infinite;
+}
+@keyframes alarm-flash {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 25%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .alarm-card {
+    animation: none;
+  }
+}

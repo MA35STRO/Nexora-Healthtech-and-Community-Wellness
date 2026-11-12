@@ -37,8 +37,15 @@ test('fall demo → check-in on companion → escalation card on caregiver → r
   await expect(card).toContainText('Possible fall')
   await expect(card).toContainText('Hip position dropped')
 
+  // looping alarm: siren banner on the person's screen, alarm button on the caregiver's
+  await expect(page.getByTestId('alarm-card')).toContainText('Help alarm sounding')
+  await expect(caregiver.getByTestId('alarm-button')).toBeVisible()
+
   await card.getByRole('button', { name: /Acknowledge/ }).click()
   await expect(card).toContainText('acknowledged')
+  await expect(caregiver.getByTestId('alarm-button')).toHaveCount(0) // acknowledging stops the alarm
+  await page.getByTestId('alarm-card').getByRole('button').click() // the person can silence the siren
+  await expect(page.getByTestId('alarm-card')).toHaveCount(0)
   await card.getByPlaceholder('Resolution note').fill('Called her, she is fine')
   await card.getByRole('button', { name: 'Resolve' }).click()
   await expect(caregiver.getByTestId('status-banner')).toContainText('All clear')

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { companionAlarm, unlockAudio, useAlarm } from '../alarm'
 import { api, fmtTime, type Snapshot } from '../api'
 import {
   IconAlert,
@@ -100,6 +101,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   useEffect(() => {
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })
   }, [snap?.chat.length])
+
+  // looping sound: soft chime while Kawan checks in, loud siren once help has been called
+  const [silencedId, setSilencedId] = useState<number | null>(null)
+  const alarm = companionAlarm(snap, silencedId)
+  const { blocked: soundBlocked } = useAlarm(alarm, voice.speaking) // pause so Kawan's voice is heard
 
   const state = snap?.state ?? 'monitoring'
   const recentTaken = snap?.meds.today.some((d) => d.taken_t && now + offset.current - d.taken_t < 15)
@@ -207,6 +213,31 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
           </section>
         )}
         <div className="stack">
+          {alarm && (soundBlocked || alarm === 'siren') && (
+            <section className="card alarm-card" role="alert" data-testid="alarm-card">
+              <b>
+                {alarm === 'siren'
+                  ? lang === 'ms'
+                    ? '🚨 Penggera bantuan berbunyi — penjaga anda telah dimaklumkan.'
+                    : '🚨 Help alarm sounding — your caregiver has been alerted.'
+                  : lang === 'ms'
+                    ? 'Kawan sedang bertanya khabar anda.'
+                    : 'Kawan is checking on you.'}
+              </b>
+              <button
+                className="btn danger"
+                onClick={soundBlocked ? unlockAudio : () => setSilencedId(snap?.active_incident?.id ?? null)}
+              >
+                {soundBlocked
+                  ? lang === 'ms'
+                    ? '🔊 Tekan untuk bunyi penggera'
+                    : '🔊 Tap to turn on the alarm sound'
+                  : lang === 'ms'
+                    ? '🔕 Senyapkan penggera'
+                    : '🔕 Silence alarm'}
+              </button>
+            </section>
+          )}
           <section className="card">
             <div className="hero">
               <Mascot mood={mood} size={200} />

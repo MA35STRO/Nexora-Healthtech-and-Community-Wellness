@@ -201,7 +201,11 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
               prescription label.
             </li>
             <li>
-              Click <b>Enable alerts</b> at the top so the browser can beep and show notifications.
+              Click <b>Enable alerts</b> at the top so the browser can show notifications and sound the alarm.
+              An urgent alert keeps ringing until someone presses <b>Acknowledge</b> (or <b>Silence alarm</b>
+              ). On the person's screen, Kawan chimes while it checks on them and sounds a loud siren if help
+              is called, so anyone nearby can hear it. Tap anywhere on each page once after opening it,
+              because browsers block sound until you do.
             </li>
             <li>
               Place the laptop or tablet so the camera sees the room, ideally the whole body. Keep the{' '}

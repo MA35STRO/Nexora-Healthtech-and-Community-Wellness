@@ -10,6 +10,7 @@ import {
   type Insights,
   type Snapshot,
 } from '../api'
+import { caregiverAlarm, unlockAudio, useAlarm } from '../alarm'
 import { ActivityHeatmap, AdherenceChart, VitalsChart, WellnessChart } from '../components/Charts'
 import { IconBell, IconPrint } from '../components/icons'
 import { TopBar } from '../components/Layout'
@@ -38,24 +39,7 @@ const EVENT_COLOR: Record<string, string> = {
   demo_started: 'var(--info)',
 }
 
-function beep() {
-  try {
-    const ctx = new AudioContext()
-    ;[0, 0.25, 0.5].forEach((d) => {
-      const o = ctx.createOscillator()
-      const g = ctx.createGain()
-      o.frequency.value = 880
-      g.gain.setValueAtTime(0.2, ctx.currentTime + d)
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d + 0.2)
-      o.connect(g).connect(ctx.destination)
-      o.start(ctx.currentTime + d)
-      o.stop(ctx.currentTime + d + 0.2)
-    })
-  } catch {
-    /* audio blocked until the caregiver interacts with the page */
-  }
-}
-
+/** Desktop notification once per new escalated alert (the looping sound is handled by useAlarm). */
 function useEscalationAlerts(snap: Snapshot | null) {
   const seen = useRef<Set<number> | null>(null)
   useEffect(() => {
@@ -68,7 +52,6 @@ function useEscalationAlerts(snap: Snapshot | null) {
     for (const i of escalated) {
       if (seen.current.has(i.id)) continue
       seen.current.add(i.id)
-      beep()
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(`Kawan alert: ${KIND_LABEL[i.kind] ?? i.kind}`, {
           body: i.escalation_reason ?? i.reasons[0],
@@ -84,6 +67,13 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
   const [insights, setInsights] = useState<Insights | null>(null)
   const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
   useEscalationAlerts(snap)
+  const [silenced, setSilenced] = useState<Set<number>>(() => new Set())
+  const ringing = caregiverAlarm(snap?.incidents ?? [], silenced)
+  const { blocked: soundBlocked } = useAlarm(ringing)
+  const silence = () =>
+    setSilenced(
+      new Set([...silenced, ...(snap?.incidents ?? []).filter((i) => i.escalated).map((i) => i.id)]),
+    )
   const loaded = snap !== null
   useEffect(() => {
     // "/caregiver#setup" → jump to the settings card
@@ -121,8 +111,23 @@ export function Caregiver({ snap, connected }: { snap: Snapshot | null; connecte
     <>
       <TopBar connected={connected}>
         <div className="row">
+          {ringing && (
+            <button
+              className="btn small danger"
+              onClick={soundBlocked ? unlockAudio : silence}
+              data-testid="alarm-button"
+            >
+              {soundBlocked ? '🔊 Tap to sound the alarm' : '🔕 Silence alarm'}
+            </button>
+          )}
           {perm !== 'granted' && 'Notification' in window && (
-            <button className="btn small" onClick={() => Notification.requestPermission().then(setPerm)}>
+            <button
+              className="btn small"
+              onClick={() => {
+                unlockAudio()
+                Notification.requestPermission().then(setPerm)
+              }}
+            >
               <IconBell size={16} /> Enable alerts
             </button>
           )}
