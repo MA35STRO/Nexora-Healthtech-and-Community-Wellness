@@ -325,17 +325,32 @@ def test_claude_cannot_cite_notes_it_was_not_given():
     assert AIAnswers(Settings(), client=fake).answer("tell me about tea", "en", "", [])["refs"] == []
 
 
-def test_pill_check_parses_json_and_rejects_unknown_match():
+def test_pill_check_matches_in_code_and_never_trusts_a_guess():
     fake = FakeClient(
-        text='Sure: {"medicine": "Metformin", "strength": "500 mg", "matches": "Metformin", '
-        '"confidence": "high", "note": "This looks like your Metformin."}'
+        text='Sure: {"text": "PHARMACY LABEL METFORMIN 500 mg 60 tablets", "medicine": "METFORMIN", '
+        '"strength": "500 mg"}'
     )
-    r = AIAnswers(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")
-    assert r["matches"] == "Metformin" and r["source"] == "claude"
-    fake.text = '{"medicine": "Panadol", "matches": "Panadol", "confidence": "high", "note": ""}'
-    assert AIAnswers(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")["matches"] is None
-    fake.text = '{"medicine": "Metformin", "matches": "Metformin", "confidence": "low", "note": ""}'  # unsure → no match
-    assert AIAnswers(Settings(), client=fake).read_medicine("aGk=", ["Metformin"], "en")["matches"] is None
+    ai = AIAnswers(Settings(), client=fake)
+    r = ai.read_medicine("aGk=", ["Metformin"], "en")
+    assert r["matches"] == "Metformin" and r["source"] == "claude" and r["confidence"] == "high"
+    assert "on your medicine list" in r["note"] and "check the label yourself" in r["note"]
+    prompt = fake.calls[0]["messages"][0]["content"][1]["text"]
+    assert "Metformin" not in prompt  # the model is never told which medicines they take
+
+    fake.text = '{"text": "PANADOL 500 mg", "medicine": "Panadol", "strength": "500 mg"}'
+    r = ai.read_medicine("aGk=", ["Metformin"], "en")
+    assert r["matches"] is None and r["medicine"] == "Panadol" and "NOT on your medicine list" in r["note"]
+
+    fake.text = '{"text": "", "medicine": "Metformin", "strength": "500 mg"}'  # named it without reading it
+    r = ai.read_medicine("aGk=", ["Metformin"], "en")
+    assert r["matches"] is None and r["medicine"] is None and r["confidence"] == "low"
+
+    fake.text = '{"text": "", "medicine": null, "strength": null}'
+    assert "Saya tidak dapat membaca" in ai.read_medicine("aGk=", ["Metformin"], "ms")["note"]
+    assert "Metformin" not in str(ai.read_medicine("aGk=", ["Metformin"], "en"))
+
+    fake.text = '{"text": "METFORMINE XR", "medicine": "METFORMINE XR"}'  # a different word, not a match
+    assert ai.read_medicine("aGk=", ["Metformin"], "en")["matches"] is None
     assert AIAnswers(Settings(anthropic_api_key="")).read_medicine("aGk=", [], "en")["source"] == "offline"
 
 

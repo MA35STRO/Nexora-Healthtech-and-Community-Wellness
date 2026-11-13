@@ -58,12 +58,67 @@ REFERENCE NOTES (curated, each with an id and source)
 FINAL LINE: after your reply, add one last line exactly like "USED: <comma-separated note ids you relied on>" \
 or "USED: none". This line is removed before the user sees your reply."""
 
-VISION_PROMPT = """Read the medicine packaging or label in this photo. Reply with ONLY a JSON object:
-{{"medicine": "<name exactly as printed, or null>", "strength": "<e.g. 500 mg as printed, or null>",
-"matches": "<one of {names} if it is clearly the same medicine, else null>",
-"confidence": "high|medium|low", "note": "<one short sentence for the patient, in {lang_name}>"}}
-Only report text you can actually read. If the label is unclear, set medicine to null and say so in note.
-Never guess a medicine from the pill's colour or shape. Do not give dosing advice."""
+# The model only COPIES printed text. It is not told which medicines the person takes (a small model given
+# that list "reads" it everywhere, even on a plain pill), and Kawan's own code does the matching.
+VISION_PROMPT = """Copy the printed words you can clearly read on the medicine box or label in this photo.
+Reply with ONLY a JSON object:
+{"text": "<every printed word you can clearly read, exactly as printed>",
+ "medicine": "<the medicine name exactly as printed, or null>",
+ "strength": "<the strength exactly as printed, e.g. 500 mg, or null>"}
+If there is no printed label, or the letters are too blurry to read one by one, reply exactly:
+{"text": "", "medicine": null, "strength": null}
+Never guess a medicine from a pill's colour or shape, or from the box design. Add nothing else."""
+
+PILL_NOTES = {
+    "match": {
+        "en": "The label seems to say {name}{strength}, which is on your medicine list. Please still check the "
+        "label yourself before taking it.",
+        "ms": "Label ini nampaknya menyebut {name}{strength}, yang ada dalam senarai ubat anda. Sila semak label "
+        "sendiri sebelum mengambilnya.",
+    },
+    "other": {
+        "en": "I'm not sure, but the label may say {name}{strength}. That is NOT on your medicine list, so check "
+        "with your caregiver or pharmacist before taking it.",
+        "ms": "Saya tidak pasti, tetapi label mungkin menyebut {name}{strength}. Ia TIADA dalam senarai ubat anda, "
+        "jadi tanya penjaga atau ahli farmasi sebelum mengambilnya.",
+    },
+    "unread": {
+        "en": "I couldn't read a medicine name. Hold the box with the printed name facing the camera, in good "
+        "light, and try again.",
+        "ms": "Saya tidak dapat membaca nama ubat. Pegang kotak dengan nama ubat menghadap kamera, dalam "
+        "cahaya terang, dan cuba lagi.",
+    },
+}
+
+
+def _in_text(name: str, text: str) -> bool:
+    return bool(name) and re.search(rf"\b{re.escape(name.lower())}\b", text.lower()) is not None
+
+
+def match_label(data: dict, med_names: list[str], lang: str) -> dict:
+    """Decide what a label read means, in code: never trust a name the model didn't actually transcribe."""
+    text = str(data.get("text") or "").strip()
+    medicine = data.get("medicine") or None
+    strength = data.get("strength") or None
+    if medicine and not _in_text(str(medicine), text):
+        medicine = None  # it named a medicine that isn't in the words it read: a guess
+    if strength and not _in_text(str(strength), text):
+        strength = None
+    matches = next((n for n in med_names if _in_text(n, text)), None)
+    if matches and not medicine:
+        medicine = matches
+    key = "match" if matches else "other" if medicine else "unread"
+    lang = "ms" if lang == "ms" else "en"
+    note = PILL_NOTES[key][lang].format(name=medicine, strength=f" {strength}" if strength else "")
+    return {
+        "medicine": medicine,
+        "strength": strength,
+        "matches": matches,
+        "confidence": "high" if matches else "medium" if medicine else "low",
+        "note": note,
+        "read_text": text[:300],
+    }
+
 
 USED_RE = re.compile(r"\n?\s*USED:\s*(.*)\s*$", re.I)
 MAX_REPLY_TOKENS = 300  # replies should be under 90 words (~150 tokens) + the USED line
@@ -316,25 +371,12 @@ class AIAnswers:
                 else "Semakan ubat memerlukan sambungan AI. Sila sahkan ubat anda dengan senarai di skrin.",
             }
         try:
-            prompt = VISION_PROMPT.format(
-                names=", ".join(med_names) or "none",
-                lang_name="Bahasa Melayu" if lang == "ms" else "English",
+            raw = self._complete(
+                "", [{"role": "user", "content": VISION_PROMPT}], 300, 0, image_b64=image_b64
             )
-            raw = self._complete("", [{"role": "user", "content": prompt}], 300, 0, image_b64=image_b64)
             m = re.search(r"\{.*\}", raw, re.S)
             data = json.loads(m.group(0)) if m else {}
-            if data.get("matches") not in med_names:
-                data["matches"] = None
-            if data.get("confidence") == "low":
-                data["matches"] = None  # never confirm a medicine on a low-confidence read
-            return {
-                "medicine": data.get("medicine"),
-                "strength": data.get("strength"),
-                "matches": data.get("matches"),
-                "confidence": data.get("confidence", "low"),
-                "note": data.get("note", ""),
-                "source": self.provider,
-            }
+            return {**match_label(data, med_names, lang), "source": self.provider}
         except Exception as e:
             log.warning("Pill check failed: %s", e)
             return {

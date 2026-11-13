@@ -151,7 +151,17 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
     setPillMsg(lang === 'ms' ? 'Sedang membaca label…' : 'Reading the label…')
     try {
       const r = await api.pillCheck(img)
-      setPillMsg(r.medicine ? `${r.medicine}${r.matches ? ` ✓ ${r.matches}` : ''} — ${r.note}` : r.note)
+      const by =
+        r.source === 'local'
+          ? lang === 'ms'
+            ? 'dibaca oleh AI tempatan di komputer ini'
+            : 'read by the local AI on this computer'
+          : r.source === 'claude'
+            ? lang === 'ms'
+              ? 'dibaca oleh Claude AI'
+              : 'read by Claude AI'
+            : ''
+      setPillMsg(`${r.matches ? '✓ ' : ''}${r.note}${by ? ` (${by})` : ''}`)
     } catch {
       setPillMsg('Pill check failed.')
     }

@@ -63,7 +63,7 @@ def test_ollama_down_falls_back_to_the_offline_library(ollama):
 
 
 def test_pill_check_sends_the_photo_to_the_local_model(ollama):
-    ollama.reply = '{"medicine": "Metformin", "strength": "500 mg", "matches": "Metformin", "confidence": "high", "note": "ok"}'
+    ollama.reply = '{"text": "METFORMIN 500 mg", "medicine": "METFORMIN", "strength": "500 mg"}'
     r = local().read_medicine("aGk=", ["Metformin"], "en")
     assert r["matches"] == "Metformin" and r["source"] == "local"
     assert ollama.calls[0]["messages"][-1]["images"] == ["aGk="]
