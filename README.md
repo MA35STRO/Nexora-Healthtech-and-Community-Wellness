@@ -108,7 +108,11 @@ Then open **http://localhost:8000**. If another program already uses port 8000 (
 
 **First time?** Open **How to use** in the top menu (http://localhost:8000/guide). It's a step-by-step guide in English and Bahasa Melayu. Then fill in **Profile & settings** and the **Medication schedule** on the Caregiver page.
 
-Optional: copy `.env.example` to `backend/.env` and add `ANTHROPIC_API_KEY` (Claude answers and pill check) or Telegram bot details.
+Optional AI for wider health questions and pill check, set up on the Caregiver page under **AI connection**:
+- **Local AI (free, private, works offline):** install [Ollama](https://ollama.com), run `ollama pull gemma3:4b`, then choose the model under **Local AI**. Nothing leaves the computer. Answers are slower and simpler than Claude's, especially in Bahasa Melayu.
+- **Claude (paid API, needs internet):** paste an API key.
+
+Without either, the cited offline health library answers. Settings can also go in `backend/.env` (see `.env.example`).
 
 <details><summary>Phone alerts for one or more caregivers (Telegram)</summary>
 
@@ -215,7 +219,7 @@ kawan/
 │   │   ├── daily_checkin.py   daily check-in + emergency warning signs (EN/BM)
 │   │   ├── safety_engine.py   ask "are you okay?" → escalate (rules R1–R10)
 │   │   ├── conversation.py    Kawan's wording + understanding replies
-│   │   ├── ai_answers.py      health answers (Claude or offline), always cited
+│   │   ├── ai_answers.py      health answers (local Ollama model, Claude or offline), always cited
 │   │   ├── health_library.py  search over data/health_library.json (104 sourced topics)
 │   │   ├── database.py        SQLite storage (never video)
 │   │   ├── telegram_alerts.py optional phone alerts

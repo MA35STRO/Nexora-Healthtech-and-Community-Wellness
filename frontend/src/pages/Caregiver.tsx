@@ -543,20 +543,30 @@ function AIConnection({ snap }: { snap: Snapshot }) {
       <div className="card-head">
         <h2>AI connection (optional)</h2>
         <span className={`chip ${snap.ai.online ? 'ok' : ''}`}>
-          {snap.ai.online ? `Connected · ${snap.ai.model}` : `Offline library · ${snap.ai.topics} topics`}
+          {snap.ai.provider === 'local'
+            ? `Local AI · ${snap.ai.model}`
+            : snap.ai.online
+              ? `Claude · ${snap.ai.model}`
+              : `Offline library · ${snap.ai.topics} topics`}
         </span>
       </div>
       <p className="small" style={{ marginTop: 0 }}>
         Kawan always works offline using its built-in health library ({snap.ai.topics} topics, each with a
-        source). Connecting <b>Claude AI</b> lets Kawan answer a much wider range of questions in natural
-        English or Bahasa Melayu, still grounded in that library and still never deciding emergencies.{' '}
-        <b>Internet alone is not enough</b> — Claude needs an API key.
+        source). Connecting an AI lets Kawan answer a much wider range of questions in natural English or
+        Bahasa Melayu, still grounded in that library and still never deciding emergencies. Pick one:
       </p>
+      <LocalAI snap={snap} />
+      <h3 style={{ margin: '16px 0 6px', fontSize: '1rem' }}>Claude AI (paid API, needs internet)</h3>
+      {snap.ai.provider === 'local' && (
+        <p className="small muted" style={{ marginTop: 0 }}>
+          The local model is in use. A saved Claude key is used only if you disconnect the local model.
+        </p>
+      )}
       {snap.ai.key_source === 'env' ? (
         <p className="small muted">
           Connected using the key in <code>backend/.env</code>. Edit that file to change it.
         </p>
-      ) : snap.ai.online ? (
+      ) : snap.ai.key_source === 'app' ? (
         <div className="row">
           <span className="small">Your key is saved on this computer only and is never shown again.</span>
           <button className="btn small" onClick={() => api.disconnectAI()}>
@@ -601,6 +611,110 @@ function AIConnection({ snap }: { snap: Snapshot }) {
             while a key is connected.
           </p>
         </>
+      )}
+      {msg && (
+        <p className={`chip ${msg.ok ? 'ok' : 'danger'}`} style={{ whiteSpace: 'normal', marginTop: 10 }}>
+          {msg.text}
+        </p>
+      )}
+    </>
+  )
+}
+
+function LocalAI({ snap }: { snap: Snapshot }) {
+  const [info, setInfo] = useState<{ running: boolean; models: string[] } | null>(null)
+  const [model, setModel] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const active = snap.ai.provider === 'local'
+  const refresh = useCallback(
+    () =>
+      api
+        .localModels()
+        .then((r) => {
+          setInfo(r)
+          setModel((m) => m || r.models.find((x) => x.startsWith('gemma3')) || r.models[0] || '')
+        })
+        .catch(() => setInfo({ running: false, models: [] })),
+    [],
+  )
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+  const connect = async () => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      const r = await api.connectLocal(model)
+      setMsg({ ok: r.ok, text: r.message })
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach the Kawan hub.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <>
+      <h3 style={{ margin: '6px 0', fontSize: '1rem' }}>Local AI (free, private, works offline)</h3>
+      <p className="small" style={{ marginTop: 0 }}>
+        Runs a model on this computer with{' '}
+        <a href="https://ollama.com" target="_blank" rel="noreferrer">
+          Ollama
+        </a>
+        : no API key, no bill, and questions and photos never leave this computer. Answers are slower (a few
+        seconds to half a minute) and simpler than Claude's, especially in Bahasa Melayu. For pill check, use
+        a model that can read images, such as <code>gemma3:4b</code>.
+      </p>
+      {snap.ai.local_source === 'env' ? (
+        <p className="small muted">
+          Using <b>{snap.ai.model}</b> from <code>backend/.env</code> (OLLAMA_MODEL). Edit that file to change
+          it.
+        </p>
+      ) : active ? (
+        <div className="row">
+          <span className="small">
+            Using <b>{snap.ai.model}</b> on this computer.
+          </span>
+          <button className="btn small" onClick={() => api.disconnectLocal()}>
+            Disconnect
+          </button>
+        </div>
+      ) : info && !info.running ? (
+        <div className="row">
+          <span className="small">
+            Ollama isn't running. Install it, open it, then run <code>ollama pull gemma3:4b</code>.
+          </span>
+          <button className="btn small" onClick={refresh}>
+            Check again
+          </button>
+        </div>
+      ) : info && !info.models.length ? (
+        <div className="row">
+          <span className="small">
+            Ollama is running but has no models. In a terminal, run <code>ollama pull gemma3:4b</code>.
+          </span>
+          <button className="btn small" onClick={refresh}>
+            Check again
+          </button>
+        </div>
+      ) : info ? (
+        <div className="row">
+          <select
+            aria-label="Local model"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            style={{ ...inputStyle, flex: 'none', minWidth: 180 }}
+          >
+            {info.models.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
+          <button className="btn primary" disabled={busy || !model} onClick={connect}>
+            {busy ? 'Loading the model…' : 'Use this model'}
+          </button>
+        </div>
+      ) : (
+        <p className="small muted">Looking for Ollama…</p>
       )}
       {msg && (
         <p className={`chip ${msg.ok ? 'ok' : 'danger'}`} style={{ whiteSpace: 'normal', marginTop: 10 }}>

@@ -337,12 +337,18 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               <span
                 className={`chip ${snap?.ai.online ? 'brand' : ''}`}
                 title={
-                  snap?.ai.online
-                    ? `Claude model: ${snap.ai.model}`
-                    : 'Built-in health library with sources. A caregiver can connect Claude AI in Caregiver → Settings.'
+                  snap?.ai.provider === 'local'
+                    ? `Local model on this computer: ${snap.ai.model}`
+                    : snap?.ai.online
+                      ? `Claude model: ${snap.ai.model}`
+                      : 'Built-in health library with sources. A caregiver can connect an AI in Caregiver → AI connection.'
                 }
               >
-                {snap?.ai.online ? 'Claude AI + library' : `Offline library · ${snap?.ai.topics ?? 0} topics`}
+                {snap?.ai.provider === 'local'
+                  ? 'Local AI + library'
+                  : snap?.ai.online
+                    ? 'Claude AI + library'
+                    : `Offline library · ${snap?.ai.topics ?? 0} topics`}
               </span>
               <div className="spacer" />
               {canListen && (
@@ -372,9 +378,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
                     {fmtTime(m.t)}
                     {m.source === 'claude'
                       ? ' · Claude AI'
-                      : m.source === 'offline'
-                        ? ' · offline library'
-                        : ''}
+                      : m.source === 'local'
+                        ? ' · local AI'
+                        : m.source === 'offline'
+                          ? ' · offline library'
+                          : ''}
                   </div>
                 </div>
               ))}

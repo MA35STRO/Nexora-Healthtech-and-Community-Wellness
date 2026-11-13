@@ -75,6 +75,10 @@ class Settings:
     anthropic_api_key: str = _s("ANTHROPIC_API_KEY")
     anthropic_model: str = _s("ANTHROPIC_MODEL", "claude-sonnet-5-5")
     llm_timeout_s: float = _f("LLM_TIMEOUT_S", 15)
+    # Or a free local model through Ollama (no key, works offline). Set a model here or connect it in the app.
+    ollama_url: str = _s("OLLAMA_URL", "http://127.0.0.1:11434")
+    ollama_model: str = _s("OLLAMA_MODEL")
+    ollama_timeout_s: float = _f("OLLAMA_TIMEOUT_S", 90)  # local models are slower, esp. the first load
 
     # --- Notifications (optional) ---
     telegram_token: str = _s("TELEGRAM_BOT_TOKEN")

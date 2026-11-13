@@ -132,6 +132,32 @@ def ai_disconnect():
     return hub.disconnect_ai()
 
 
+class LocalAIIn(BaseModel):
+    model: str = Field("", max_length=100)  # empty = pick an installed model (gemma3 preferred)
+
+
+@app.get("/api/ai/local")
+def ai_local_models():
+    """Is Ollama running on this computer, and which models does it have?"""
+    return hub.local_models()
+
+
+@app.post("/api/ai/local")
+def ai_local_connect(body: LocalAIIn):
+    """Use a free local model through Ollama. Tested first; nothing leaves this computer."""
+    if hub.ai_local_source() == "env":
+        return {
+            "ok": False,
+            "message": "A local model is set in backend/.env (OLLAMA_MODEL). Edit that file to change it.",
+        }
+    return hub.connect_local(body.model)
+
+
+@app.delete("/api/ai/local")
+def ai_local_disconnect():
+    return hub.disconnect_local()
+
+
 class TelegramIn(BaseModel):
     token: str = Field(min_length=1, max_length=200)
 

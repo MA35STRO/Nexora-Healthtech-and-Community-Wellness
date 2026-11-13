@@ -102,7 +102,14 @@ export interface Snapshot {
   routine: { still_s: number; threshold_s: number }
   meds: { today: DoseView[]; next: DoseView | null; schedule: Med[] }
   vitals: { latest: Vitals | null; history: Vitals[]; simulated: boolean; mode: string }
-  ai: { online: boolean; model: string | null; key_source: 'env' | 'app' | null; topics: number }
+  ai: {
+    online: boolean
+    provider: 'local' | 'claude' | null
+    model: string | null
+    key_source: 'env' | 'app' | null
+    local_source: 'env' | 'app' | null
+    topics: number
+  }
   notify: {
     telegram: boolean
     telegram_recipients: number
@@ -206,6 +213,10 @@ export const api = {
   saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),
   connectAI: (api_key: string) => req<{ ok: boolean; message: string }>('POST', '/api/ai', { api_key }),
   disconnectAI: () => req<{ ok: boolean }>('DELETE', '/api/ai'),
+  localModels: () => req<{ running: boolean; models: string[] }>('GET', '/api/ai/local'),
+  connectLocal: (model: string) =>
+    req<{ ok: boolean; message: string; model?: string }>('POST', '/api/ai/local', { model }),
+  disconnectLocal: () => req<{ ok: boolean }>('DELETE', '/api/ai/local'),
   connectTelegram: (token: string) =>
     req<{ ok: boolean; message: string }>('POST', '/api/telegram', { token }),
   disconnectTelegram: () => req<{ ok: boolean }>('DELETE', '/api/telegram'),

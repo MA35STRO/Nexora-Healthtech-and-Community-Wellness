@@ -3,6 +3,7 @@
 import os
 
 os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["OLLAMA_MODEL"] = ""
 os.environ["TELEGRAM_BOT_TOKEN"] = ""
 os.environ["TELEGRAM_CHAT_ID"] = ""
 os.environ["KAWAN_DB"] = ":memory:"

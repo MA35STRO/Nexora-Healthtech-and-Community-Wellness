@@ -16,6 +16,8 @@ import logging
 import re
 from typing import Optional
 
+import httpx
+
 from . import health_library
 from .config import Settings
 from .config import settings as default_settings
@@ -64,11 +66,54 @@ Never guess a medicine from the pill's colour or shape. Do not give dosing advic
 USED_RE = re.compile(r"\n?\s*USED:\s*(.*)\s*$", re.I)
 
 
+class OllamaChat:
+    """A local model served by Ollama on this computer: free, no API key, nothing leaves the machine.
+
+    Talks to Ollama's own HTTP API (/api/chat), so no extra Python package is needed.
+    """
+
+    def __init__(self, url: str, model: str, timeout_s: float):
+        self.url, self.model, self.timeout_s = url.rstrip("/"), model, timeout_s
+
+    def complete(
+        self, system: str, messages: list[dict], max_tokens: int, temperature: float, image_b64: str = ""
+    ) -> str:
+        msgs = [{"role": "system", "content": system}] if system else []
+        msgs += [dict(m) for m in messages]
+        if image_b64 and msgs:
+            msgs[-1]["images"] = [image_b64]
+        r = httpx.post(
+            f"{self.url}/api/chat",
+            json={
+                "model": self.model,
+                "messages": msgs,
+                "stream": False,
+                "keep_alive": "10m",  # stay loaded between questions, then free the memory
+                "options": {"temperature": temperature, "num_predict": max_tokens},
+            },
+            timeout=self.timeout_s,
+        )
+        r.raise_for_status()
+        return (r.json().get("message") or {}).get("content", "")
+
+
+def ollama_models(url: str) -> list[str]:
+    """Models installed in Ollama, or [] if Ollama isn't running."""
+    try:
+        r = httpx.get(f"{url.rstrip('/')}/api/tags", timeout=3)
+        return [m["name"] for m in r.json().get("models", [])]
+    except Exception:
+        return []
+
+
 class AIAnswers:
-    def __init__(self, cfg: Settings = default_settings, client=None):
+    def __init__(self, cfg: Settings = default_settings, client=None, local: Optional[OllamaChat] = None):
         self.cfg = cfg
-        self.client = client
-        if client is None and cfg.anthropic_api_key:
+        self.client = client  # Claude (anthropic SDK client)
+        self.local = local  # or a local Ollama model; the one in use wins over Claude
+        if local is None and client is None and cfg.ollama_model:
+            self.local = OllamaChat(cfg.ollama_url, cfg.ollama_model, cfg.ollama_timeout_s)
+        if self.local is None and client is None and cfg.anthropic_api_key:
             try:
                 import anthropic
 
@@ -80,10 +125,64 @@ class AIAnswers:
 
     @property
     def online(self) -> bool:
-        return self.client is not None
+        return self.local is not None or self.client is not None
+
+    @property
+    def provider(self) -> Optional[str]:
+        return "local" if self.local else "claude" if self.client else None
+
+    @property
+    def model(self) -> Optional[str]:
+        return self.local.model if self.local else self.cfg.anthropic_model if self.client else None
+
+    def _complete(
+        self, system: str, messages: list[dict], max_tokens: int, temperature: float, image_b64: str = ""
+    ) -> str:
+        if self.local is not None:
+            return self.local.complete(system, messages, max_tokens, temperature, image_b64)
+        if image_b64:
+            text = messages[-1]["content"]
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64},
+                        },
+                        {"type": "text", "text": text},
+                    ],
+                }
+            ]
+        kwargs = {"system": system} if system else {}
+        resp = self.client.messages.create(
+            model=self.cfg.anthropic_model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            messages=messages,
+            **kwargs,
+        )
+        return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
 
     def check(self) -> tuple[bool, str]:
-        """Tiny test call so the caregiver knows straight away whether the key works."""
+        """Tiny test call so the caregiver knows straight away whether the connection works."""
+        if self.local is not None:
+            installed = ollama_models(self.local.url)
+            if not installed:
+                return False, "Ollama isn't running on this computer. Open the Ollama app and try again."
+            if self.local.model not in installed:
+                return (
+                    False,
+                    f"Model '{self.local.model}' isn't installed. Run: ollama pull {self.local.model}",
+                )
+            try:  # also loads the model into memory, so the first real question is quicker
+                self.local.complete("", [{"role": "user", "content": "Hi"}], 1, 0)
+                return True, f"Connected to the local model {self.local.model}. Nothing leaves this computer."
+            except Exception as e:
+                return (
+                    False,
+                    f"Ollama couldn't run the model ({type(e).__name__}). It may need more free memory.",
+                )
         if self.client is None:
             return False, "No API key set."
         try:
@@ -112,10 +211,10 @@ class AIAnswers:
     def answer(
         self, text: str, lang: str, context: str, history: list[dict], profile: Optional[dict] = None
     ) -> dict:
-        """Returns {"reply", "source": "claude"|"offline", "refs": [{"title", "source"}]}."""
+        """Returns {"reply", "source": "claude"|"local"|"offline", "refs": [{"title", "source"}]}."""
         profile = profile or {}
         hits = [t for score, t in health_library.search(text, k=3) if score >= 1]
-        if self.client is not None:
+        if self.online:
             try:
                 notes = (
                     "\n".join(f"[{t['id']}] {t['title']} (source: {t['source']}): {t['en']}" for t in hits)
@@ -127,66 +226,41 @@ class AIAnswers:
                     if m.get("text")
                 ]
                 msgs = _alternate(msgs + [{"role": "user", "content": text}])
-                resp = self.client.messages.create(
-                    model=self.cfg.anthropic_model,
-                    max_tokens=450,
-                    temperature=0.2,
-                    system=SYSTEM.format(
-                        name=profile.get("user_name") or "the user",
-                        caregiver=profile.get("caregiver_name") or "their caregiver",
-                        lang_name="Bahasa Melayu" if lang == "ms" else "English",
-                        context=context or "(none)",
-                        notes=notes,
-                    ),
-                    messages=msgs,
+                system = SYSTEM.format(
+                    name=profile.get("user_name") or "the user",
+                    caregiver=profile.get("caregiver_name") or "their caregiver",
+                    lang_name="Bahasa Melayu" if lang == "ms" else "English",
+                    context=context or "(none)",
+                    notes=notes,
                 )
-                raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
+                raw = self._complete(system, msgs, 450, 0.2).strip()
                 reply, used = _split_used(raw)
                 if reply:
                     by_id = {t["id"]: t for t in hits}
                     refs = [_ref(by_id[i]) for i in used if i in by_id]
-                    return {"reply": reply, "source": "claude", "refs": refs}
+                    return {"reply": reply, "source": self.provider, "refs": refs}
             except Exception as e:
-                log.warning("Claude call failed, using offline knowledge: %s", e)
+                log.warning("AI call failed, using offline knowledge: %s", e)
         return offline_answer(text, lang)
 
     def read_medicine(self, image_b64: str, med_names: list[str], lang: str) -> dict:
-        if self.client is None:
+        if not self.online:
             return {
                 "medicine": None,
                 "matches": None,
                 "confidence": "low",
                 "source": "offline",
-                "note": "Pill check needs an internet connection and an API key. Please confirm your medicine "
+                "note": "Pill check needs an AI connection (a local model or Claude). Please confirm your medicine "
                 "against the list on screen."
                 if lang != "ms"
-                else "Semakan ubat memerlukan internet dan kunci API. Sila sahkan ubat anda dengan senarai di skrin.",
+                else "Semakan ubat memerlukan sambungan AI. Sila sahkan ubat anda dengan senarai di skrin.",
             }
         try:
-            resp = self.client.messages.create(
-                model=self.cfg.anthropic_model,
-                max_tokens=300,
-                temperature=0,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64},
-                            },
-                            {
-                                "type": "text",
-                                "text": VISION_PROMPT.format(
-                                    names=", ".join(med_names) or "none",
-                                    lang_name="Bahasa Melayu" if lang == "ms" else "English",
-                                ),
-                            },
-                        ],
-                    }
-                ],
+            prompt = VISION_PROMPT.format(
+                names=", ".join(med_names) or "none",
+                lang_name="Bahasa Melayu" if lang == "ms" else "English",
             )
-            raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            raw = self._complete("", [{"role": "user", "content": prompt}], 300, 0, image_b64=image_b64)
             m = re.search(r"\{.*\}", raw, re.S)
             data = json.loads(m.group(0)) if m else {}
             if data.get("matches") not in med_names:
@@ -199,7 +273,7 @@ class AIAnswers:
                 "matches": data.get("matches"),
                 "confidence": data.get("confidence", "low"),
                 "note": data.get("note", ""),
-                "source": "claude",
+                "source": self.provider,
             }
         except Exception as e:
             log.warning("Pill check failed: %s", e)

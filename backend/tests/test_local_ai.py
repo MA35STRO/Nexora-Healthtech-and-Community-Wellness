@@ -1,0 +1,106 @@
+"""Local AI through Ollama: same grounding and safety as Claude, no API key, nothing leaves the PC."""
+
+import httpx
+import pytest
+
+from app import ai_answers
+from app.ai_answers import AIAnswers, OllamaChat
+from app.config import Settings
+from app.database import Database
+from app.hub import Hub
+
+
+class FakeOllama:
+    """Stands in for httpx.post/get against Ollama's /api/chat and /api/tags."""
+
+    def __init__(
+        self, reply="Metformin helps lower blood sugar.\nUSED: metformin", models=("gemma3:4b",), down=False
+    ):
+        self.reply, self.models, self.down, self.calls = reply, list(models), down, []
+
+    def post(self, url, json=None, timeout=None):
+        if self.down:
+            raise httpx.ConnectError("refused")
+        self.calls.append(json)
+        return httpx.Response(
+            200,
+            json={"message": {"role": "assistant", "content": self.reply}},
+            request=httpx.Request("POST", url),
+        )
+
+    def get(self, url, timeout=None):
+        if self.down:
+            raise httpx.ConnectError("refused")
+        return httpx.Response(200, json={"models": [{"name": m} for m in self.models]})
+
+
+@pytest.fixture
+def ollama(monkeypatch):
+    fake = FakeOllama()
+    monkeypatch.setattr(ai_answers.httpx, "post", fake.post)
+    monkeypatch.setattr(ai_answers.httpx, "get", fake.get)
+    return fake
+
+
+def local(model="gemma3:4b"):
+    return AIAnswers(Settings(), local=OllamaChat("http://127.0.0.1:11434", model, 30))
+
+
+def test_answer_is_grounded_and_cited(ollama):
+    r = local().answer("what is metformin", "en", "Medicines: none", [])
+    assert r["source"] == "local" and r["reply"] == "Metformin helps lower blood sugar."
+    assert r["refs"] and "metformin" in r["refs"][0]["title"].lower()
+    sent = ollama.calls[0]
+    assert sent["model"] == "gemma3:4b" and sent["stream"] is False
+    assert sent["messages"][0]["role"] == "system" and "REFERENCE NOTES" in sent["messages"][0]["content"]
+    assert sent["messages"][-1] == {"role": "user", "content": "what is metformin"}
+
+
+def test_ollama_down_falls_back_to_the_offline_library(ollama):
+    ollama.down = True
+    r = local().answer("what is metformin", "en", "", [])
+    assert r["source"] == "offline" and r["refs"]
+
+
+def test_pill_check_sends_the_photo_to_the_local_model(ollama):
+    ollama.reply = '{"medicine": "Metformin", "strength": "500 mg", "matches": "Metformin", "confidence": "high", "note": "ok"}'
+    r = local().read_medicine("aGk=", ["Metformin"], "en")
+    assert r["matches"] == "Metformin" and r["source"] == "local"
+    assert ollama.calls[0]["messages"][-1]["images"] == ["aGk="]
+
+
+def test_check_explains_what_is_wrong(ollama):
+    assert local().check()[0]
+    assert "ollama pull" in local("llama3.2:3b").check()[1]  # not installed
+    ollama.down = True
+    assert "isn't running" in local().check()[1]
+
+
+def test_hub_connects_disconnects_and_keeps_it_through_reset(ollama):
+    hub = Hub(Settings(anthropic_api_key="", ollama_model=""), Database(":memory:"))
+    assert not hub.ai.online and hub.local_models()["models"] == ["gemma3:4b"]
+    r = hub.connect_local("")  # picks the installed gemma3 model
+    assert r["ok"] and r["model"] == "gemma3:4b"
+    snap = hub.snapshot()["ai"]
+    assert snap["provider"] == "local" and snap["model"] == "gemma3:4b" and snap["local_source"] == "app"
+    hub.reset()
+    assert hub.ai.provider == "local"  # "reset data" keeps the AI connection
+    hub.disconnect_local()
+    assert not hub.ai.online
+
+
+def test_local_model_wins_over_claude_and_falls_back_to_it():
+    hub = Hub(Settings(anthropic_api_key="sk-ant-" + "x" * 40, ollama_model=""), Database(":memory:"))
+    assert hub.ai.provider == "claude"
+    hub.store.kv_set("ollama_model", "gemma3:4b")
+    hub.ai = hub._ai_from_saved_key()
+    assert hub.ai.provider == "local"
+    hub.disconnect_local()
+    assert hub.ai.provider == "claude"
+
+
+def test_nothing_installed_gives_clear_instructions(ollama):
+    ollama.models = []
+    hub = Hub(Settings(anthropic_api_key="", ollama_model=""), Database(":memory:"))
+    r = hub.connect_local("")
+    assert not r["ok"] and "ollama pull" in r["message"]

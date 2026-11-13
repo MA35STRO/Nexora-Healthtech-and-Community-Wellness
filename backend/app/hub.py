@@ -15,8 +15,10 @@ import threading
 import time
 from typing import Optional
 
+import httpx
+
 from . import conversation, daily_checkin, demo_scenarios, health_library
-from .ai_answers import AIAnswers
+from .ai_answers import AIAnswers, ollama_models
 from .config import Settings
 from .config import settings as default_settings
 from .data_types import Detection, Event, Observation
@@ -479,7 +481,7 @@ class Hub:
         self.stop_demo()
         with self.lock:
             # "reset data" keeps the AI and Telegram connections
-            kept = {k: self.store.kv_get(k) for k in ("anthropic_api_key", "telegram")}
+            kept = {k: self.store.kv_get(k) for k in ("anthropic_api_key", "ollama_model", "telegram")}
             self.store.clear()
             for k, v in kept.items():
                 if v:
@@ -489,8 +491,46 @@ class Hub:
 
     # ---------- optional Claude connection (key entered in Settings, stored only on this computer) ----------
     def _ai_from_saved_key(self) -> AIAnswers:
+        """A local Ollama model wins over Claude when both are set (it's free and keeps data on this PC)."""
         key = self.cfg.anthropic_api_key or self.store.kv_get("anthropic_api_key") or ""
-        return AIAnswers(dataclasses.replace(self.cfg, anthropic_api_key=key))
+        local = self.cfg.ollama_model or self.store.kv_get("ollama_model") or ""
+        return AIAnswers(dataclasses.replace(self.cfg, anthropic_api_key=key, ollama_model=local))
+
+    def ai_local_source(self) -> str | None:
+        if self.cfg.ollama_model:
+            return "env"
+        return "app" if self.store.kv_get("ollama_model") else None
+
+    def local_models(self) -> dict:
+        installed = ollama_models(self.cfg.ollama_url)
+        return {"running": bool(installed) or _ollama_up(self.cfg.ollama_url), "models": installed}
+
+    def connect_local(self, model: str) -> dict:
+        """Use a model already installed in Ollama. Tested first (this also loads it), saved only if it works."""
+        model = model.strip()
+        if not model:
+            installed = ollama_models(self.cfg.ollama_url)
+            if not installed:
+                return {
+                    "ok": False,
+                    "message": "Ollama isn't running, or has no models yet. Open Ollama, then run: ollama pull gemma3:4b",
+                }
+            model = next((m for m in installed if m.startswith("gemma3")), installed[0])
+        candidate = AIAnswers(dataclasses.replace(self.cfg, ollama_model=model))
+        ok, message = candidate.check()  # slow (loads the model): outside the lock
+        if ok:
+            with self.lock:
+                self.store.kv_set("ollama_model", model)
+                self.ai = candidate
+                self.version += 1
+        return {"ok": ok, "message": message, "model": model}
+
+    def disconnect_local(self) -> dict:
+        with self.lock:
+            self.store.kv_set("ollama_model", None)
+            self.ai = self._ai_from_saved_key()
+            self.version += 1
+        return {"ok": True}
 
     def ai_key_source(self) -> str | None:
         if self.cfg.anthropic_api_key:
@@ -510,6 +550,7 @@ class Hub:
         if ok:
             with self.lock:
                 self.store.kv_set("anthropic_api_key", key)
+                self.store.kv_set("ollama_model", None)  # connecting Claude means "use Claude"
                 self.ai = candidate
                 self.version += 1
         return {"ok": ok, "message": message}
@@ -573,7 +614,9 @@ class Hub:
                 },
                 "ai": {
                     "online": self.ai.online,
-                    "model": self.cfg.anthropic_model if self.ai.online else None,
+                    "provider": self.ai.provider,
+                    "model": self.ai.model,
+                    "local_source": self.ai_local_source(),
                     "key_source": self.ai_key_source(),
                     "topics": len(health_library.topics()),
                 },
@@ -713,6 +756,13 @@ class Hub:
         )
         self.chat = self.chat[-100:]
         self.version += 1
+
+
+def _ollama_up(url: str) -> bool:
+    try:
+        return httpx.get(url, timeout=2).status_code == 200
+    except Exception:
+        return False
 
 
 def _sentence(text: str) -> str:
