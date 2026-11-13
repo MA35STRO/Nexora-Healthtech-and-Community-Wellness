@@ -100,6 +100,32 @@ test('report renders and caregiver charts load', async ({ page, request }) => {
   await expect(page.locator('.heat .cell').first()).toBeVisible()
 })
 
+test('doctor report can be edited: notes, own question, hidden section', async ({ page }) => {
+  await page.goto('/report')
+  const report = page.getByTestId('report')
+  await expect(report).toContainText('Vital signs')
+  await page.getByRole('button', { name: /Edit report/ }).click()
+
+  await page.getByLabel('Notes for the doctor').fill('Dizzy in the mornings since the new tablet.')
+  await page.getByLabel('Add a question').fill('Can she take paracetamol?')
+  await page.getByRole('button', { name: 'Add', exact: true }).click()
+  await page.getByTestId('section-vitals').getByRole('checkbox').uncheck()
+  await page.getByRole('button', { name: 'Save changes' }).click()
+
+  await expect(report).toContainText('Dizzy in the mornings since the new tablet.')
+  await expect(report).toContainText('Can she take paracetamol?')
+  await expect(page.getByTestId('section-vitals')).toHaveCount(0) // left out of the report
+  await page.reload()
+  await expect(report).toContainText('Can she take paracetamol?') // saved on the hub
+  await expect(page.getByTestId('section-vitals')).toHaveCount(0)
+
+  // undo, so other tests see the full report
+  await page.getByRole('button', { name: /Edit report/ }).click()
+  await page.getByTestId('section-vitals').getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'Save changes' }).click()
+  await expect(page.getByTestId('section-vitals')).toBeVisible()
+})
+
 test('fresh install shows no invented data and a welcome card', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('welcome')).toBeVisible()

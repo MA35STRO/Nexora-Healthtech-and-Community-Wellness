@@ -150,6 +150,15 @@ export interface Insights {
   incident_counts: Record<string, number>
   meds: Med[]
   events: TimelineEvent[]
+  report: ReportEdits
+}
+
+/** What the caregiver added to, or hid from, the doctor report. Measured data itself is never edited. */
+export interface ReportEdits {
+  notes: string
+  questions: string[]
+  hidden_sections: string[]
+  hidden_questions: string[]
 }
 
 export interface Triage {
@@ -212,6 +221,7 @@ export const api = {
   vitals: (v: Partial<Vitals>) => req<{ ok: boolean; alert: boolean }>('POST', '/api/vitals', v),
   profile: () => req<Profile>('GET', '/api/profile'),
   saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),
+  saveReport: (r: ReportEdits) => req<ReportEdits>('POST', '/api/report', r),
   connectAI: (api_key: string) => req<{ ok: boolean; message: string }>('POST', '/api/ai', { api_key }),
   disconnectAI: () => req<{ ok: boolean }>('DELETE', '/api/ai'),
   localModels: () => req<{ running: boolean; models: string[] }>('GET', '/api/ai/local'),

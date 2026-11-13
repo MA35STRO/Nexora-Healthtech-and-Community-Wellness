@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { api, fmtDateTime, KIND_LABEL, type Insights } from '../api'
+import { useEffect, useState, type ReactNode } from 'react'
+import { api, fmtDateTime, KIND_LABEL, type Insights, type Profile, type ReportEdits } from '../api'
 import { IconPrint } from '../components/icons'
 import { BrandMark, TopBar } from '../components/Layout'
 
@@ -9,15 +9,61 @@ function stats(xs: number[]) {
   return { avg: Math.round(avg * 10) / 10, min: Math.min(...xs), max: Math.max(...xs) }
 }
 
+type SectionKey = 'details' | 'glance' | 'vitals' | 'meds' | 'symptoms' | 'alerts' | 'questions' | 'notes'
+const EMPTY: ReportEdits = { notes: '', questions: [], hidden_sections: [], hidden_questions: [] }
+const field = {
+  padding: '7px 10px',
+  borderRadius: 10,
+  border: '1px solid var(--line)',
+  background: 'var(--bg)',
+  width: '100%',
+}
+
+/** A report section: hidden ones disappear from the report, but stay (dimmed) while editing. */
+function Section(props: {
+  k: SectionKey
+  title: string
+  editing: boolean
+  included: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  const { k, title, editing, included, onToggle, children } = props
+  if (!editing && !included) return null
+  return (
+    <section className={editing && !included ? 'report-hidden' : undefined} data-testid={`section-${k}`}>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <h2>{title}</h2>
+        {editing && (
+          <label className="small no-print" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="checkbox" checked={included} onChange={onToggle} />
+            Include in report
+          </label>
+        )}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 export function Report({ connected }: { connected: boolean }) {
   const [data, setData] = useState<Insights | null>(null)
   const [days, setDays] = useState(7)
-  useEffect(() => {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<ReportEdits>(EMPTY)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [newQ, setNewQ] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = () =>
     api
       .insights(days)
       .then(setData)
       .catch(() => undefined)
-  }, [days])
+  useEffect(() => {
+    load()
+  }, [days]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data)
     return (
@@ -26,6 +72,44 @@ export function Report({ connected }: { connected: boolean }) {
         <main className="report">Loading report…</main>
       </>
     )
+
+  const edits = editing ? draft : (data.report ?? EMPTY)
+  const shown = (k: SectionKey) => !edits.hidden_sections.includes(k)
+  const startEditing = () => {
+    setDraft(data.report ?? EMPTY)
+    setProfile(data.profile)
+    setNewQ('')
+    setError(null)
+    setEditing(true)
+  }
+  const save = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const extra = newQ.trim() ? [...draft.questions, newQ.trim()] : draft.questions
+      await api.saveReport({ ...draft, questions: extra })
+      if (profile) await api.saveProfile(profile)
+      await load()
+      setEditing(false)
+    } catch {
+      setError('Could not save. Is the Kawan hub running?')
+    } finally {
+      setSaving(false)
+    }
+  }
+  const toggle = (list: 'hidden_sections' | 'hidden_questions', key: string) =>
+    setDraft((d) => ({
+      ...d,
+      [list]: d[list].includes(key) ? d[list].filter((x) => x !== key) : [...d[list], key],
+    }))
+
+  const sec = (k: SectionKey) => ({
+    k,
+    editing,
+    included: shown(k),
+    onToggle: () => toggle('hidden_sections', k),
+  })
+
   const pick = (k: 'hr' | 'spo2' | 'sys' | 'dia' | 'temp') =>
     data.vitals.map((v) => v[k]).filter((x): x is number => typeof x === 'number')
   const vit = {
@@ -45,39 +129,88 @@ export function Report({ connected }: { connected: boolean }) {
   data.wellness.forEach((w) => w.symptoms.forEach((s) => (symptomCounts[s] = (symptomCounts[s] ?? 0) + 1)))
   const from = new Date((data.generated_t - days * 86400) * 1000).toLocaleDateString()
   const to = new Date(data.generated_t * 1000).toLocaleDateString()
+  const p = editing && profile ? profile : data.profile
+
+  // suggested questions come from the data; the caregiver can remove any of them
+  const auto: [string, string | false][] = [
+    [
+      'missed',
+      data.adherence.missed > 0 && `${data.adherence.missed} missed doses — is the schedule easy to follow?`,
+    ],
+    ['bp', (vit.sys?.max ?? 0) >= 140 && `Home systolic BP reached ${vit.sys?.max} mmHg.`],
+    ['spo2', (vit.spo2?.min ?? 100) < 94 && `Lowest home SpO2 was ${vit.spo2?.min}%.`],
+    [
+      'fall',
+      data.incidents.some((i) => i.kind === 'possible_fall') &&
+        'A possible fall was detected — consider a falls-risk review.',
+    ],
+    ['pain', (stats(pains)?.max ?? 0) >= 6 && `Pain reached ${stats(pains)?.max}/10.`],
+    ['dizzy', 'Any medicines that could cause dizziness or drowsiness?'],
+  ]
+  const autoShown = auto.filter(([, text]) => text) as [string, string][]
+  const anyQuestion =
+    autoShown.some(([k]) => !edits.hidden_questions.includes(k)) || edits.questions.length > 0
 
   return (
     <>
       <TopBar connected={connected}>
         <div className="row no-print">
-          <select
-            value={days}
-            onChange={(e) => setDays(+e.target.value)}
-            aria-label="Report period"
-            style={{
-              padding: '6px 10px',
-              borderRadius: 10,
-              border: '1px solid var(--line)',
-              background: 'var(--card)',
-            }}
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={14}>Last 14 days</option>
-            <option value={30}>Last 30 days</option>
-          </select>
-          <button className="btn small primary" onClick={() => window.print()}>
-            <IconPrint size={16} /> Print / Save PDF
-          </button>
+          {!editing && (
+            <select
+              value={days}
+              onChange={(e) => setDays(+e.target.value)}
+              aria-label="Report period"
+              style={{
+                padding: '6px 10px',
+                borderRadius: 10,
+                border: '1px solid var(--line)',
+                background: 'var(--card)',
+              }}
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={14}>Last 14 days</option>
+              <option value={30}>Last 30 days</option>
+            </select>
+          )}
+          {editing ? (
+            <>
+              <button className="btn small" onClick={() => setEditing(false)} disabled={saving}>
+                Cancel
+              </button>
+              <button className="btn small primary" onClick={save} disabled={saving}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn small" onClick={startEditing}>
+                ✏️ Edit report
+              </button>
+              <button className="btn small primary" onClick={() => window.print()}>
+                <IconPrint size={16} /> Print / Save PDF
+              </button>
+            </>
+          )}
         </div>
       </TopBar>
       <main className="report" data-testid="report">
+        {editing && (
+          <p className="chip info no-print" style={{ whiteSpace: 'normal' }}>
+            Editing: change the details, add notes and questions for the doctor, or untick a section to leave
+            it out. Readings, doses and alerts come from the app and can't be changed here.
+          </p>
+        )}
+        {error && (
+          <p className="chip danger no-print" style={{ whiteSpace: 'normal' }}>
+            {error}
+          </p>
+        )}
         <div className="row">
           <BrandMark />
           <div>
             <h1>Home monitoring summary</h1>
             <div className="muted">
-              {data.profile.user_name || 'Name not set'} · {from} – {to} · generated{' '}
-              {fmtDateTime(data.generated_t)}
+              {p.user_name || 'Name not set'} · {from} – {to} · generated {fmtDateTime(data.generated_t)}
             </div>
           </div>
         </div>
@@ -87,23 +220,43 @@ export function Report({ connected }: { connected: boolean }) {
           </p>
         )}
 
-        <section>
-          <h2>Details (as entered in the app)</h2>
-          <dl className="kv">
-            <dt>Conditions</dt>
-            <dd>{data.profile.conditions || 'Not entered'}</dd>
-            <dt>Allergies</dt>
-            <dd>{data.profile.allergies || 'Not entered'}</dd>
-            <dt>Caregiver</dt>
-            <dd>
-              {[data.profile.caregiver_name, data.profile.caregiver_phone].filter(Boolean).join(' · ') ||
-                'Not entered'}
-            </dd>
-          </dl>
-        </section>
+        <Section {...sec('details')} title="Details (as entered in the app)">
+          {editing && profile ? (
+            <div className="report-edit-grid">
+              {(
+                [
+                  ['user_name', 'Name'],
+                  ['conditions', 'Conditions'],
+                  ['allergies', 'Allergies'],
+                  ['caregiver_name', 'Caregiver'],
+                  ['caregiver_phone', 'Caregiver phone'],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="small">
+                  <b>{label}</b>
+                  <input
+                    aria-label={label}
+                    value={profile[k]}
+                    onChange={(e) => setProfile({ ...profile, [k]: e.target.value })}
+                    style={field}
+                  />
+                </label>
+              ))}
+              <span className="tiny muted">These are also saved to the profile on the Caregiver page.</span>
+            </div>
+          ) : (
+            <dl className="kv">
+              <dt>Conditions</dt>
+              <dd>{p.conditions || 'Not entered'}</dd>
+              <dt>Allergies</dt>
+              <dd>{p.allergies || 'Not entered'}</dd>
+              <dt>Caregiver</dt>
+              <dd>{[p.caregiver_name, p.caregiver_phone].filter(Boolean).join(' · ') || 'Not entered'}</dd>
+            </dl>
+          )}
+        </Section>
 
-        <section>
-          <h2>At a glance</h2>
+        <Section {...sec('glance')} title="At a glance">
           <div className="stats">
             <div className="stat">
               <span className="muted small">Medication adherence</span>
@@ -128,10 +281,9 @@ export function Report({ connected }: { connected: boolean }) {
               <span className="small">max {stats(pains)?.max ?? '–'}</span>
             </div>
           </div>
-        </section>
+        </Section>
 
-        <section>
-          <h2>Vital signs (home device)</h2>
+        <Section {...sec('vitals')} title="Vital signs (home device)">
           <table>
             <thead>
               <tr>
@@ -160,10 +312,9 @@ export function Report({ connected }: { connected: boolean }) {
               ))}
             </tbody>
           </table>
-        </section>
+        </Section>
 
-        <section>
-          <h2>Medicines</h2>
+        <Section {...sec('meds')} title="Medicines">
           <table>
             <thead>
               <tr>
@@ -218,10 +369,9 @@ export function Report({ connected }: { connected: boolean }) {
               </tr>
             </tbody>
           </table>
-        </section>
+        </Section>
 
-        <section>
-          <h2>Symptoms reported</h2>
+        <Section {...sec('symptoms')} title="Symptoms reported">
           {Object.keys(symptomCounts).length ? (
             <p>
               {Object.entries(symptomCounts)
@@ -238,10 +388,9 @@ export function Report({ connected }: { connected: boolean }) {
                 “{w.note}” — {fmtDateTime(w.t)}
               </p>
             ))}
-        </section>
+        </Section>
 
-        <section>
-          <h2>Alerts and events</h2>
+        <Section {...sec('alerts')} title="Alerts and events">
           {data.incidents.length ? (
             <table>
               <thead>
@@ -271,28 +420,104 @@ export function Report({ connected }: { connected: boolean }) {
           ) : (
             <p className="muted">No alerts in this period.</p>
           )}
-        </section>
+        </Section>
 
-        <section>
-          <h2>Questions to discuss with the doctor</h2>
-          <ul>
-            {data.adherence.missed > 0 && (
-              <li>{data.adherence.missed} missed doses — is the schedule easy to follow?</li>
-            )}
-            {(vit.sys?.max ?? 0) >= 140 && <li>Home systolic BP reached {vit.sys?.max} mmHg.</li>}
-            {(vit.spo2?.min ?? 100) < 94 && <li>Lowest home SpO2 was {vit.spo2?.min}%.</li>}
-            {data.incidents.some((i) => i.kind === 'possible_fall') && (
-              <li>A possible fall was detected — consider a falls-risk review.</li>
-            )}
-            {(stats(pains)?.max ?? 0) >= 6 && <li>Pain reached {stats(pains)?.max}/10.</li>}
-            <li>Any medicines that could cause dizziness or drowsiness?</li>
+        <Section {...sec('questions')} title="Questions to discuss with the doctor">
+          <ul className={editing ? 'report-questions editing' : 'report-questions'}>
+            {autoShown.map(([k, text]) => {
+              const hidden = edits.hidden_questions.includes(k)
+              if (hidden && !editing) return null
+              return (
+                <li key={k} className={hidden ? 'report-hidden' : undefined}>
+                  {text}
+                  {editing && (
+                    <button
+                      className="btn small ghost no-print"
+                      onClick={() => toggle('hidden_questions', k)}
+                    >
+                      {hidden ? 'Put back' : 'Remove'}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+            {edits.questions.map((q, n) => (
+              <li key={`own-${n}`}>
+                {editing ? (
+                  <input
+                    aria-label={`Your question ${n + 1}`}
+                    value={q}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        questions: d.questions.map((x, j) => (j === n ? e.target.value : x)),
+                      }))
+                    }
+                    style={{ ...field, width: 'auto', flex: 1 }}
+                  />
+                ) : (
+                  q
+                )}
+                {editing && (
+                  <button
+                    className="btn small ghost no-print"
+                    onClick={() =>
+                      setDraft((d) => ({ ...d, questions: d.questions.filter((_, j) => j !== n) }))
+                    }
+                  >
+                    Remove
+                  </button>
+                )}
+              </li>
+            ))}
+            {!editing && !anyQuestion && <li className="muted">No questions added.</li>}
           </ul>
-        </section>
+          {editing && (
+            <form
+              className="row no-print"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!newQ.trim()) return
+                setDraft((d) => ({ ...d, questions: [...d.questions, newQ.trim()] }))
+                setNewQ('')
+              }}
+            >
+              <input
+                aria-label="Add a question"
+                placeholder="Add your own question, e.g. Can she take paracetamol with her medicines?"
+                value={newQ}
+                onChange={(e) => setNewQ(e.target.value)}
+                style={{ ...field, width: 'auto', flex: 1 }}
+              />
+              <button className="btn small">Add</button>
+            </form>
+          )}
+        </Section>
+
+        {(editing || edits.notes) && (
+          <Section {...sec('notes')} title="Notes from the caregiver">
+            {editing ? (
+              <textarea
+                aria-label="Notes for the doctor"
+                placeholder="Anything the doctor should know, e.g. changes you've noticed, side effects, how they've been sleeping."
+                value={draft.notes}
+                onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+                rows={5}
+                maxLength={2000}
+                style={{ ...field, resize: 'vertical' }}
+              />
+            ) : (
+              <p style={{ whiteSpace: 'pre-wrap' }}>{edits.notes}</p>
+            )}
+          </Section>
+        )}
 
         <p className="tiny muted" style={{ marginTop: 28 }}>
           Generated by Kawan, a prototype home safety companion. This is a summary of self-reported and
           home-device data to support a conversation with a healthcare professional. It is not a diagnosis and
           has not been clinically validated.
+          {(edits.notes || edits.questions.length > 0) &&
+            ' Notes and added questions were written by the caregiver.'}
         </p>
       </main>
     </>

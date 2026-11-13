@@ -1151,3 +1151,31 @@ input[type='range'] {
     animation: none;
   }
 }
+
+/* doctor report: edit mode */
+.report-hidden {
+  opacity: 0.4;
+}
+@media print {
+  .report-hidden {
+    display: none !important;
+  }
+}
+.report-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.report-edit-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.report-questions li {
+  margin-bottom: 4px;
+}
+.report-questions.editing li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

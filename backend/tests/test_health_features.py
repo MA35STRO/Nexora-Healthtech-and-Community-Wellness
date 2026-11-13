@@ -505,3 +505,30 @@ def test_reminder_text_reads_as_sentences():
         and _sentence("Same time daily.") == "Same time daily."
     )
     assert _sentence("") == ""
+
+
+# ---------- doctor report edits ----------
+def test_report_edits_are_saved_cleaned_and_never_touch_readings():
+    hub = Hub(CFG, Database(":memory:"))
+    assert hub.insights()["report"] == {
+        "notes": "",
+        "questions": [],
+        "hidden_sections": [],
+        "hidden_questions": [],
+    }
+    saved = hub.set_report_edits(
+        {
+            "notes": "  Dizzy in the mornings since the new tablet.  ",
+            "questions": ["Can she take paracetamol?", "   ", 5],
+            "hidden_sections": ["alerts", "vitals", "made_up"],
+            "hidden_questions": ["dizzy", "nope"],
+        }
+    )
+    assert saved == {
+        "notes": "Dizzy in the mornings since the new tablet.",
+        "questions": ["Can she take paracetamol?"],
+        "hidden_sections": ["alerts", "vitals"],
+        "hidden_questions": ["dizzy"],
+    }
+    assert hub.insights()["report"] == saved
+    assert hub.insights()["vitals"] == []  # edits never create or change readings

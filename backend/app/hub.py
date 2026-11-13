@@ -666,7 +666,41 @@ class Hub:
                 "incident_counts": by_kind,
                 "meds": self.meds.schedule(),
                 "events": self.store.recent_events(200, since=since),
+                "report": self.report_edits(),
             }
+
+    # ---------- doctor report: what the caregiver added or chose to hide (measured data is never edited) ----------
+    REPORT_SECTIONS = ("details", "glance", "vitals", "meds", "symptoms", "alerts", "questions", "notes")
+    REPORT_AUTO_QUESTIONS = ("missed", "bp", "spo2", "fall", "pain", "dizzy")
+
+    def report_edits(self) -> dict:
+        saved = self.store.kv_get("report_edits") or {}
+        return {
+            "notes": str(saved.get("notes", "")),
+            "questions": [str(q) for q in saved.get("questions", [])],
+            "hidden_sections": [s for s in saved.get("hidden_sections", []) if s in self.REPORT_SECTIONS],
+            "hidden_questions": [
+                q for q in saved.get("hidden_questions", []) if q in self.REPORT_AUTO_QUESTIONS
+            ],
+        }
+
+    def set_report_edits(self, data: dict) -> dict:
+        clean = {
+            "notes": str(data.get("notes") or "").strip()[:2000],
+            "questions": [
+                q.strip()[:300] for q in data.get("questions") or [] if isinstance(q, str) and q.strip()
+            ][:20],
+            "hidden_sections": sorted(
+                {s for s in data.get("hidden_sections") or [] if s in self.REPORT_SECTIONS}
+            ),
+            "hidden_questions": sorted(
+                {q for q in data.get("hidden_questions") or [] if q in self.REPORT_AUTO_QUESTIONS}
+            ),
+        }
+        with self.lock:
+            self.store.kv_set("report_edits", clean)
+            self.version += 1
+        return clean
 
     # ---------- profile (entered by the user/caregiver; nothing is invented) ----------
     PROFILE_FIELDS = {

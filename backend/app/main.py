@@ -200,6 +200,19 @@ def insights(days: int = 7):
     return hub.insights(max(1, min(days, 30)))
 
 
+class ReportEditsIn(BaseModel):
+    notes: str = Field("", max_length=2000)
+    questions: list[str] = Field(default_factory=list, max_length=20)
+    hidden_sections: list[str] = Field(default_factory=list, max_length=20)
+    hidden_questions: list[str] = Field(default_factory=list, max_length=20)
+
+
+@app.post("/api/report")
+def report_edits(body: ReportEditsIn):
+    """Caregiver's notes, own questions and hidden sections for the doctor report. Readings can't be edited."""
+    return hub.set_report_edits(body.model_dump())
+
+
 @app.post("/api/chat")
 def chat(body: ChatIn):
     if not body.text.strip():
