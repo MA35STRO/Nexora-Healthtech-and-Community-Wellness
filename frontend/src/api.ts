@@ -36,6 +36,7 @@ export interface ChatMsg {
   kind: 'chat' | 'checkin' | 'reminder' | 'alert'
   source: string | null
   refs?: { title: string; source: string }[]
+  partial?: boolean // still being written by the AI: shown, not read aloud
 }
 
 export interface Profile {

@@ -1134,3 +1134,20 @@ input[type='range'] {
     animation: none;
   }
 }
+
+/* an AI reply still being written: blinking cursor at the end */
+.msg.partial::after {
+  content: '▍';
+  margin-left: 2px;
+  animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg.partial::after {
+    animation: none;
+  }
+}

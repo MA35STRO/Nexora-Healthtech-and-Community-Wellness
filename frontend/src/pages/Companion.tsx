@@ -93,9 +93,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
       return
     }
     for (const m of snap.chat) {
-      if (m.id > spoken.current && m.from === 'assistant') voice.speak(m.text)
+      if (m.id > spoken.current && m.from === 'assistant' && !m.partial) voice.speak(m.text)
     }
-    spoken.current = Math.max(spoken.current, newest)
+    // a reply still being written is skipped; its finished version arrives with a new id and is read then
+    const done = snap.chat.filter((m) => !m.partial)
+    spoken.current = Math.max(spoken.current, done.length ? done[done.length - 1].id : 0)
   }, [snap, voice])
 
   useEffect(() => {
@@ -367,7 +369,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
             </div>
             <div className="chat" ref={chatRef}>
               {(snap?.chat ?? []).map((m) => (
-                <div key={m.id} className={`msg ${m.from} ${m.kind}`}>
+                <div key={m.id} className={`msg ${m.from} ${m.kind}${m.partial ? ' partial' : ''}`}>
                   {m.text}
                   {m.refs && m.refs.length > 0 && (
                     <div className="refs">

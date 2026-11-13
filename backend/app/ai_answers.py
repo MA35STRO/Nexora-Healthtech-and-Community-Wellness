@@ -38,6 +38,8 @@ ACCURACY — THE MOST IMPORTANT RULES
 confident, say plainly that you're not sure and suggest asking a pharmacist, doctor or the nearest Klinik Kesihatan.
 - NEVER invent: statistics, study results, doses or dosing schedules, phone numbers, websites, prices, or anything \
 about {name}. Only use personal facts that appear in THEIR APP DATA; if something isn't there, say it isn't recorded.
+- Mention their own medicines only when the question is about medicines. Never say what a medicine is for unless \
+the REFERENCE NOTES or THEIR APP DATA say so.
 - Never tell them how much of a medicine to take beyond "follow your prescription or the label"; never suggest \
 starting, stopping or changing a medicine.
 
@@ -64,6 +66,16 @@ Only report text you can actually read. If the label is unclear, set medicine to
 Never guess a medicine from the pill's colour or shape. Do not give dosing advice."""
 
 USED_RE = re.compile(r"\n?\s*USED:\s*(.*)\s*$", re.I)
+MAX_REPLY_TOKENS = 300  # replies should be under 90 words (~150 tokens) + the USED line
+_TAIL_RE = re.compile(r"\n\s*(U|US|USE|USED|USED:.*)$", re.I | re.S)  # the USED line, half-typed
+
+
+def visible_part(raw: str) -> str:
+    """What a half-written reply should show: never the hidden "USED: …" line, even half-typed."""
+    m = USED_RE.search(raw)
+    if m:
+        raw = raw[: m.start()]
+    return _TAIL_RE.sub("", raw).strip()
 
 
 class OllamaChat:
@@ -88,13 +100,46 @@ class OllamaChat:
                 "model": self.model,
                 "messages": msgs,
                 "stream": False,
-                "keep_alive": "10m",  # stay loaded between questions, then free the memory
+                "keep_alive": "30m",  # stay loaded between questions, then free the memory
                 "options": {"temperature": temperature, "num_predict": max_tokens},
             },
             timeout=self.timeout_s,
         )
         r.raise_for_status()
         return (r.json().get("message") or {}).get("content", "")
+
+    def stream(self, system: str, messages: list[dict], max_tokens: int, temperature: float):
+        """Yield the reply piece by piece as the model writes it, so it can be shown straight away."""
+        msgs = [{"role": "system", "content": system}] + [dict(m) for m in messages]
+        with httpx.stream(
+            "POST",
+            f"{self.url}/api/chat",
+            json={
+                "model": self.model,
+                "messages": msgs,
+                "stream": True,
+                "keep_alive": "30m",
+                "options": {"temperature": temperature, "num_predict": max_tokens},
+            },
+            timeout=self.timeout_s,
+        ) as r:
+            r.raise_for_status()
+            for line in r.iter_lines():
+                if not line:
+                    continue
+                part = json.loads(line)
+                piece = (part.get("message") or {}).get("content", "")
+                if piece:
+                    yield piece
+                if part.get("done"):
+                    break
+
+    def warm_up(self):
+        """Load the model into memory so the first question doesn't wait for it."""
+        try:
+            self.complete("", [{"role": "user", "content": "Hi"}], 1, 0)
+        except Exception as e:
+            log.info("Local model warm-up skipped: %s", e)
 
 
 def ollama_models(url: str) -> list[str]:
@@ -209,7 +254,13 @@ class AIAnswers:
             return False, f"Claude returned an error: {name}."
 
     def answer(
-        self, text: str, lang: str, context: str, history: list[dict], profile: Optional[dict] = None
+        self,
+        text: str,
+        lang: str,
+        context: str,
+        history: list[dict],
+        profile: Optional[dict] = None,
+        on_partial=None,
     ) -> dict:
         """Returns {"reply", "source": "claude"|"local"|"offline", "refs": [{"title", "source"}]}."""
         profile = profile or {}
@@ -233,7 +284,16 @@ class AIAnswers:
                     context=context or "(none)",
                     notes=notes,
                 )
-                raw = self._complete(system, msgs, 450, 0.2).strip()
+                if self.local is not None and on_partial is not None:
+                    raw = ""
+                    for piece in self.local.stream(system, msgs, MAX_REPLY_TOKENS, 0.2):
+                        raw += piece
+                        shown = visible_part(raw)
+                        if shown:
+                            on_partial(shown)
+                    raw = raw.strip()
+                else:
+                    raw = self._complete(system, msgs, MAX_REPLY_TOKENS, 0.2).strip()
                 reply, used = _split_used(raw)
                 if reply:
                     by_id = {t["id"]: t for t in hits}

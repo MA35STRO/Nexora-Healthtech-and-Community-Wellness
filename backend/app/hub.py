@@ -52,6 +52,8 @@ class Hub:
         self.notifier.on_ack = self.acknowledge_from_telegram
         self.notifier.status = self.status_text
         self.notifier.on_change = self._bump
+        if self.ai.local is not None:  # load the local model now, so the first question is quick
+            threading.Thread(target=self.ai.local.warm_up, daemon=True).start()
         self.lock = threading.RLock()
         self._demo_stop = threading.Event()
         self._build()
@@ -170,7 +172,26 @@ class Hub:
             context, history = self._context_text(now), [m for m in self.chat[:-1] if m["from"] != "system"]
             profile = self.profile()
 
-        res = self.ai.answer(text, lang, context, history, profile)  # slow: outside the lock
+        # Slow step, outside the lock. While it runs, a "…" bubble shows at once and fills in word by word
+        # (local models stream); the finished, cited reply then replaces it and is the one read aloud.
+        draft = None
+        if self.ai.online:
+            with self.lock:
+                draft = self._say("assistant", "…", source=self.ai.provider, partial=True)
+
+        def partial(shown: str):
+            with self.lock:
+                if draft is not None:
+                    draft["text"] = shown
+                    self.version += 1
+
+        try:
+            res = self.ai.answer(text, lang, context, history, profile, on_partial=partial)
+        finally:
+            with self.lock:
+                if draft is not None and draft in self.chat:
+                    self.chat.remove(draft)
+                    self.version += 1
         with self.lock:
             return self._answer(res["reply"], "ask", source=res["source"], refs=res["refs"])
 
@@ -739,23 +760,25 @@ class Hub:
         kind: str = "chat",
         source: Optional[str] = None,
         refs: Optional[list] = None,
-    ):
+        partial: bool = False,
+    ) -> Optional[dict]:
         if not text:
-            return
+            return None
         self._msg_id += 1
-        self.chat.append(
-            {
-                "id": self._msg_id,
-                "t": time.time(),
-                "from": who,
-                "text": text,
-                "kind": kind,
-                "source": source,
-                "refs": refs or [],
-            }
-        )
-        self.chat = self.chat[-100:]
+        msg = {
+            "id": self._msg_id,
+            "t": time.time(),
+            "from": who,
+            "text": text,
+            "kind": kind,
+            "source": source,
+            "refs": refs or [],
+            "partial": partial,  # still being written: shown, but not read aloud
+        }
+        self.chat.append(msg)
+        del self.chat[:-100]  # in place, so a draft being written keeps its place
         self.version += 1
+        return msg
 
 
 def _ollama_up(url: str) -> bool:

@@ -12,6 +12,13 @@ Push-Location frontend
 if (-not (Test-Path node_modules)) { npm install }
 npm run build
 Pop-Location
+# Optional local AI: open Ollama if it's installed but not running (Kawan works without it)
+$ollama = Get-Command ollama -ErrorAction SilentlyContinue
+if ($ollama -and -not (Get-Process ollama -ErrorAction SilentlyContinue)) {
+  $ollamaApp = Join-Path (Split-Path $ollama.Source) 'ollama app.exe'
+  if (Test-Path $ollamaApp) { Start-Process $ollamaApp } else { Start-Process $ollama.Source -ArgumentList 'serve' -WindowStyle Hidden }
+  Write-Host 'Started Ollama (local AI).'
+}
 $port = Get-KawanPort
 Save-KawanPort $port
 Write-Host "`nKawan is starting: open http://localhost:$port  (caregiver view: http://localhost:$port/caregiver)`n" -ForegroundColor Green

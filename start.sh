@@ -22,5 +22,10 @@ else
   [ "$PORT" = 8000 ] || echo "Port 8000 is in use, so Kawan will use port $PORT instead."
 fi
 
+# Optional local AI: start Ollama if it's installed but not running (Kawan works without it)
+if command -v ollama >/dev/null 2>&1 && ! curl -s -m 2 http://127.0.0.1:11434 >/dev/null 2>&1; then
+  (ollama serve >/dev/null 2>&1 &) && echo "Started Ollama (local AI)."
+fi
+
 echo -e "\nKawan is starting: open http://localhost:$PORT  (caregiver view: http://localhost:$PORT/caregiver)\n"
 cd backend && .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port "$PORT"

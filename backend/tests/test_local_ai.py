@@ -104,3 +104,67 @@ def test_nothing_installed_gives_clear_instructions(ollama):
     hub = Hub(Settings(anthropic_api_key="", ollama_model=""), Database(":memory:"))
     r = hub.connect_local("")
     assert not r["ok"] and "ollama pull" in r["message"]
+
+
+# ---------- streaming: words appear as they are written ----------
+from contextlib import contextmanager  # noqa: E402
+
+from app.ai_answers import visible_part  # noqa: E402
+
+
+def test_visible_part_never_shows_the_used_line():
+    assert visible_part("Metformin lowers sugar.") == "Metformin lowers sugar."
+    assert visible_part("Metformin lowers sugar.\nU") == "Metformin lowers sugar."
+    assert visible_part("Metformin lowers sugar.\nUSE") == "Metformin lowers sugar."
+    assert visible_part("Metformin lowers sugar.\nUSED: metf") == "Metformin lowers sugar."
+    assert visible_part("Call us") == "Call us"  # a word, not the start of the USED line
+
+
+def stream_fake(monkeypatch, pieces):
+    lines = [f'{{"message": {{"content": {p!r}}}, "done": false}}'.replace("'", '"') for p in pieces]
+    lines.append('{"done": true}')
+
+    class R:
+        def raise_for_status(self):
+            pass
+
+        def iter_lines(self):
+            return iter(lines)
+
+    @contextmanager
+    def fake_stream(method, url, json=None, timeout=None):
+        assert json["stream"] is True
+        yield R()
+
+    monkeypatch.setattr(ai_answers.httpx, "stream", fake_stream)
+
+
+def test_streamed_answer_shows_progress_then_the_cited_reply(monkeypatch, ollama):
+    stream_fake(monkeypatch, ["Metformin ", "helps lower ", "blood sugar.", "\nUSED: ", "metformin"])
+    seen = []
+    r = local().answer("what is metformin", "en", "", [], on_partial=seen.append)
+    assert seen[0] == "Metformin" and seen[-1] == "Metformin helps lower blood sugar."
+    assert not any("USED" in s for s in seen)
+    assert r["reply"] == "Metformin helps lower blood sugar." and r["refs"] and r["source"] == "local"
+
+
+def test_hub_draft_bubble_is_replaced_by_the_final_reply(monkeypatch, ollama):
+    stream_fake(monkeypatch, ["Metformin helps.", "\nUSED: metformin"])
+    hub = Hub(Settings(anthropic_api_key="", ollama_model=""), Database(":memory:"))
+    hub.ai = local()
+    drafts = []
+    real_partial_answer = hub.ai.answer
+
+    def spy(*a, on_partial=None, **k):
+        def watch(text):
+            on_partial(text)
+            drafts.append([dict(m) for m in hub.chat if m.get("partial")])
+
+        return real_partial_answer(*a, on_partial=watch, **k)
+
+    hub.ai.answer = spy
+    r = hub.user_message("what is metformin")
+    assert r["source"] == "local" and r["reply"] == "Metformin helps."
+    assert drafts and drafts[-1][0]["text"] == "Metformin helps."  # shown while being written
+    assert not any(m.get("partial") for m in hub.chat)  # the draft is gone afterwards
+    assert [m["text"] for m in hub.chat if m["from"] == "assistant"] == ["Metformin helps."]
