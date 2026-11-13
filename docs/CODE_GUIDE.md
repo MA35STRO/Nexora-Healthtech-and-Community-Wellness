@@ -76,7 +76,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 | [`pages/Guide.tsx`](../frontend/src/pages/Guide.tsx) | The "How to use" page (EN/BM). |
 | [`camera/useCamera.ts`](../frontend/src/camera/useCamera.ts) | Opens the webcam, runs MediaPipe Pose in the browser, draws the skeleton, sends only the 33 points to the hub. |
 | [`camera/poseMath.ts`](../frontend/src/camera/poseMath.ts) | Small maths helpers for the camera (packing points, measuring motion). |
-| [`voice/useVoice.ts`](../frontend/src/voice/useVoice.ts) + [`voice/wake.ts`](../frontend/src/voice/wake.ts) | Speaking and listening; recognising "Hey Kawan" even when it's misheard. |
+| [`voice/useVoice.ts`](../frontend/src/voice/useVoice.ts) + [`voice/wake.ts`](../frontend/src/voice/wake.ts) | Speaking and listening; waking on "Hey" (and "Hey Kawan", even when the name is misheard). |
 | [`api.ts`](../frontend/src/api.ts) | Every call the website makes to the backend, plus the live connection that keeps screens up to date. |
 | [`components/`](../frontend/src/components) | Reusable pieces: the Kawan mascot, charts, the check-in pop-up, the readings form, icons. |
 | [`i18n.ts`](../frontend/src/i18n.ts) | English and Bahasa Melayu text for the companion screen. |
@@ -170,7 +170,7 @@ is made by small, readable, **tested rules** — never by the AI. The AI only *e
 | Suite | Command | What it proves |
 |---|---|---|
 | Backend (107) | `cd backend && .venv/Scripts/python -m pytest -q` | Fall rules, safety engine R1–R10, replies in EN/BM, medicines, inactivity, vitals, triage, AI grounding and citations, no invented data, full API + WebSocket flows |
-| Frontend unit (19) | `cd frontend && npm test` | Pose maths, motion score, "Hey Kawan" matching |
+| Frontend unit (19) | `cd frontend && npm test` | Pose maths, motion score, "Hey" wake-word matching |
 | Browser end-to-end (12) | `cd frontend && npx playwright test` | A real Chromium with a fake webcam: camera auto-start, fall → check-in → alert → resolve, medicines, cited answers, triage, settings, readings, guide, report |
 
 | Test file | Covers |

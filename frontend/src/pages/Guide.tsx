@@ -42,8 +42,8 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
           body: (
             <ul>
               <li>
-                <b>Tekan "Hidupkan suara"</b> sekali. Kawan akan bercakap dan mendengar <b>"Hai Kawan, …"</b>.
-                Contoh: <i>"Hai Kawan, apa itu metformin?"</i>
+                <b>Tekan "Hidupkan suara"</b> sekali. Kawan akan bercakap dan mendengar <b>"Hai, …"</b>.
+                Contoh: <i>"Hai, apa itu metformin?"</i>
               </li>
               <li>
                 <b>Butang besar:</b> <b>Saya okay</b>, <b>Tolong</b> (memaklumkan penjaga segera),{' '}
@@ -156,7 +156,7 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
                 Guna Chrome atau Edge.
               </li>
               <li>
-                <b>"Hai Kawan" tidak didengar:</b> pastikan suara hidup dan mikrofon dibenarkan; lihat teks
+                <b>"Hai" tidak didengar:</b> pastikan suara hidup dan mikrofon dibenarkan; lihat teks
                 "dengar:" di bawah gelembung. Pengecaman suara memerlukan internet. Atau tekan <b>Cakap</b>.
               </li>
               <li>
@@ -221,8 +221,8 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
         body: (
           <ul>
             <li>
-              <b>Tap "Turn on voice"</b> once. Kawan will talk and listen for <b>"Hey Kawan, …"</b>, for
-              example <i>"Hey Kawan, what is metformin for?"</i>
+              <b>Tap "Turn on voice"</b> once. Kawan will talk and listen for <b>"Hey, …"</b>, for example{' '}
+              <i>"Hey, what is metformin for?"</i> ("Hey Kawan, …" works too.)
             </li>
             <li>
               <b>Big buttons:</b> <b>I'm okay</b>, <b>Help</b> (alerts your caregiver immediately),{' '}
@@ -334,9 +334,8 @@ function content(lang: Lang): { intro: string; blocks: Block[] } {
               Chrome or Edge.
             </li>
             <li>
-              <b>"Hey Kawan" isn't heard:</b> make sure voice is on and the microphone is allowed, and look at
-              the "heard:" text under the speech bubble. Speech recognition needs internet. Or press{' '}
-              <b>Talk</b>.
+              <b>"Hey" isn't heard:</b> make sure voice is on and the microphone is allowed, and look at the
+              "heard:" text under the speech bubble. Speech recognition needs internet. Or press <b>Talk</b>.
             </li>
             <li>
               <b>Fall detection:</b> works best with the whole body in view and a well-lit room. Keep the tab

@@ -1,5 +1,5 @@
 // Voice: speaks Kawan's messages (speechSynthesis) and listens (Web Speech API, Chrome/Edge).
-// Hands-free: "Hey Kawan, …" wakes it. During a check-in it accepts "I'm okay" / "Help" without the wake word.
+// Hands-free: "Hey, …" (or "Hey Kawan, …") wakes it. During a check-in it accepts "I'm okay" / "Help" without the wake word.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isCheckinAnswer, matchWake } from './wake'
 
@@ -104,7 +104,7 @@ export function useVoice({ lang, enabled, handsFree, awaitingAnswer, onCommand }
           if (!w.continuous) r.stop()
         } else if (wake.woke) {
           if (wake.command) opts.current.onCommand(wake.command)
-          else w.armedUntil = Date.now() + 8000 // "Hey Kawan" … (pause) … "what is metformin?"
+          else w.armedUntil = Date.now() + 8000 // "Hey" … (pause) … "what is metformin?"
         } else if (Date.now() < w.armedUntil) {
           w.armedUntil = 0
           opts.current.onCommand(said)

@@ -187,7 +187,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               className={`btn small ${voiceOn ? 'primary' : ''}`}
               onClick={() => {
                 setVoiceOn(!voiceOn)
-                if (!voiceOn && canListen) setHandsFree(true) // voice on = Kawan talks AND listens for "Hey Kawan"
+                if (!voiceOn && canListen) setHandsFree(true) // voice on = Kawan talks AND listens for "Hey"
                 if (!voiceOn && lastAssistant) setTimeout(() => voice.speak(lastAssistant.text), 50)
               }}
             >
@@ -280,7 +280,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
                       </span>
                     ) : voice.listening ? (
                       <span className="muted">
-                        🎙 {lang === 'ms' ? 'Sebut' : 'Say'} <b>“Hey Kawan, …”</b>
+                        🎙 {lang === 'ms' ? 'Sebut' : 'Say'} <b>{lang === 'ms' ? '“Hai, …”' : '“Hey, …”'}</b>
                         {voice.heard && (
                           <>
                             {' '}

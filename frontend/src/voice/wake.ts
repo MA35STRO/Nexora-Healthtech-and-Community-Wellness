@@ -1,21 +1,12 @@
-// Wake-phrase matching for hands-free use: "Hey Kawan, what is metformin?" → "what is metformin?"
+// Wake-word matching for hands-free use. The wake word is "Hey":
+//   "Hey, what is metformin?"        → "what is metformin?"
+//   "Hey Kawan, what is metformin?"  → "what is metformin?"   (the name is optional and removed)
+//   "Kawan, what is metformin?"      → "what is metformin?"   (still works on its own)
 // "Kawan" is not an English word, so recognisers transcribe it many ways ("Cowan", "Karwan", "Kevin",
-// "car one"...). We compare a rough sound-key of the first word(s) with "kawan" instead of exact spellings.
+// "car one"...). We compare a rough sound-key of the word(s) after "hey" with "kawan" to strip it.
 
-const GREETINGS = new Set([
-  'hey',
-  'hei',
-  'hai',
-  'hi',
-  'hay',
-  'ok',
-  'okay',
-  'hello',
-  'helo',
-  'hallo',
-  'a',
-  'eh',
-])
+// how speech recognisers write "hey" (and the Malay "hai")
+const WAKE_WORDS = new Set(['hey', 'hei', 'hay', 'hai', 'heyy', 'heey'])
 const TARGET = soundKey('kawan')
 
 export interface WakeMatch {
@@ -46,27 +37,24 @@ function distance(a: string, b: string): number {
 export function matchWake(transcript: string): WakeMatch {
   const words = transcript.trim().split(/\s+/).filter(Boolean)
   const clean = (w: string) => w.toLowerCase().replace(/[^a-z']/g, '')
-  let i = 0
-  const greeted = words.length > 0 && GREETINGS.has(clean(words[0]))
-  if (greeted) i = 1
-  // the name may come out as one word ("cowan") or two ("ka wan", "car one")
+  const rest = (from: number) =>
+    words
+      .slice(from)
+      .join(' ')
+      .replace(/^[\s,.!?]+/, '')
+      .trim()
+  const heyFirst = words.length > 0 && WAKE_WORDS.has(clean(words[0]))
+  const i = heyFirst ? 1 : 0
+  // after "hey", drop the name if it's there: one word ("cowan") or two ("ka wan", "car one")
   for (const n of [1, 2]) {
     if (i + n > words.length) break
     const key = soundKey(words.slice(i, i + n).join(''))
     const dist = distance(key, TARGET)
-    // exact sound-match is enough on its own; a near-match needs "hey/hi/ok" in front
-    if (dist === 0 || (greeted && dist <= (key.length >= 4 ? 2 : 1))) {
-      return {
-        woke: true,
-        command: words
-          .slice(i + n)
-          .join(' ')
-          .replace(/^[\s,.!?]+/, '')
-          .trim(),
-      }
-    }
+    // "Kawan" alone needs an exact sound-match; after "hey" a near-match is dropped too
+    if (dist === 0 || (heyFirst && dist <= (key.length >= 4 ? 2 : 1)))
+      return { woke: true, command: rest(i + n) }
   }
-  return { woke: false, command: '' }
+  return heyFirst ? { woke: true, command: rest(1) } : { woke: false, command: '' }
 }
 
 /** Replies we accept without a wake word while Kawan is actively asking "Are you okay?". */

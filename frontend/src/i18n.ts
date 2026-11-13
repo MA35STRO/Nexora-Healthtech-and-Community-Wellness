@@ -30,7 +30,7 @@ const S = {
   },
   voiceOn: { en: 'Voice on', ms: 'Suara hidup' },
   voiceOff: { en: 'Turn on voice', ms: 'Hidupkan suara' },
-  handsFree: { en: '“Hey Kawan” listening', ms: 'Dengar “Hai Kawan”' },
+  handsFree: { en: '“Hey” listening', ms: 'Dengar “Hai”' },
   disclaimer: {
     en: 'Kawan is a prototype safety companion, not a medical device and not a doctor. In an emergency call 999.',
     ms: 'Kawan ialah prototaip peneman keselamatan, bukan peranti perubatan dan bukan doktor. Kecemasan, hubungi 999.',

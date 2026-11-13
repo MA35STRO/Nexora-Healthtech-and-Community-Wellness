@@ -47,7 +47,7 @@ notice → check in with the person → escalate only when needed → give the c
 | ❤️ | **Vitals monitor** | Enter **real** readings from your own BP monitor, oximeter or thermometer, or have a device post to `POST /api/vitals`. Unusual readings trigger a check-in; oxygen and heart-rate alerts need **sustained** readings, so one bad reading isn't enough. |
 | 🩺 | **Daily wellness check-in** | Mood, pain, sleep and symptoms. Gives non-diagnostic triage (*self-care / keep an eye on it / see a doctor today / call 999*). Red-flag symptoms escalate instantly. |
 | 📚 | **Health literacy (EN/BM)** | Ask *"What is metformin for?"* or *"Apa itu darah tinggi?"* Answers come from a **curated, source-cited library of 104 topics** (Malaysian MOH clinical practice guidelines, WHO, NHS and others). **The source is shown under every answer.** With an API key, Claude answers grounded in that library, at low temperature, and must say "I'm not sure" rather than invent doses, numbers or personal details. |
-| 🎙️ | **Voice companion** | Speaks every prompt. Listens with *"Hey Kawan…"*. During a check-in it accepts "I'm okay" or "Tolong" with no wake word. |
+| 🎙️ | **Voice companion** | Speaks every prompt. Listens for *"Hey, …"*. During a check-in it accepts "I'm okay" or "Tolong" with no wake word. |
 | 👨‍👩‍👧 | **Caregiver dashboard** | Live status, alert card with reasons and uncertainty, Acknowledge/Resolve, timeline, vitals, adherence, activity heatmap, wellness trends, browser notifications and sound. Optional **Telegram** phone alerts. |
 | 🧾 | **Doctor-visit report** | One click to a printable or PDF summary: adherence, vitals ranges, symptoms, alerts, and questions to ask the doctor. |
 | 🔒 | **Privacy by design** | Video **never leaves the device**. Only 33 body-pose points per frame go to the hub, and no images are stored. Privacy mode shows just the skeleton. |
@@ -195,7 +195,7 @@ Interactive docs are at **http://localhost:8000/docs**.
 
 ```bash
 cd backend  && .venv/Scripts/python -m pytest -q     # 107 tests: detector, engine, meds, routine, vitals, triage, routing, grounded AI + citations, no-invented-data checks, API/WebSocket e2e
-cd frontend && npm test                               # 19 unit tests: landmark packing, motion score, fuzzy "Hey Kawan" matching
+cd frontend && npm test                               # 19 unit tests: landmark packing, motion score, "Hey" wake-word matching
 cd frontend && npx playwright test                    # 12 browser e2e tests with a fake webcam (camera auto-start, fall → escalate → resolve, meds, cited answers, triage, settings, readings, guide, report)
 ```
 GitHub Actions runs all three on every push.
@@ -228,7 +228,7 @@ kawan/
 ├── frontend/                 Website (TypeScript + React)
 │   ├── src/pages/             Companion · Caregiver · Report · How to use
 │   ├── src/camera/            webcam + MediaPipe in the browser
-│   ├── src/voice/             speaking, listening, "Hey Kawan"
+│   ├── src/voice/             speaking, listening, "Hey" wake word
 │   ├── src/components/        Kawan mascot, charts, forms
 │   └── e2e/                   browser tests with a fake webcam
 ├── docs/                     code guide + screenshots
