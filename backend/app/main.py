@@ -92,6 +92,7 @@ class WellnessIn(BaseModel):
 
 class PillIn(BaseModel):
     image: str  # base64 JPEG (data: URL prefix allowed), sent only when the user taps "Check my medicine"
+    image_flipped: Optional[str] = None  # the same frame mirrored, for webcams that send a mirrored picture
 
 
 @app.get("/api/health")
@@ -296,14 +297,19 @@ def wellness_submit(body: WellnessIn):
 
 @app.post("/api/pillcheck")
 def pill_check(body: PillIn):
-    raw = body.image.split(",", 1)[-1]
-    if len(raw) > 2_000_000:
-        raise HTTPException(413, "Image too large")
-    try:
-        base64.b64decode(raw, validate=True)
-    except (binascii.Error, ValueError):
-        raise HTTPException(400, "Image must be base64 JPEG")
-    return hub.pill_check(raw)
+    images = []
+    for img in (body.image, body.image_flipped):
+        if not img:
+            continue
+        raw = img.split(",", 1)[-1]
+        if len(raw) > 2_000_000:
+            raise HTTPException(413, "Image too large")
+        try:
+            base64.b64decode(raw, validate=True)
+        except (binascii.Error, ValueError):
+            raise HTTPException(400, "Image must be base64 JPEG")
+        images.append(raw)
+    return hub.pill_check(images[0], images[1:])
 
 
 # ---------- demo / reset ----------

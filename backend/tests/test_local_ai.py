@@ -168,3 +168,23 @@ def test_hub_draft_bubble_is_replaced_by_the_final_reply(monkeypatch, ollama):
     assert drafts and drafts[-1][0]["text"] == "Metformin helps."  # shown while being written
     assert not any(m.get("partial") for m in hub.chat)  # the draft is gone afterwards
     assert [m["text"] for m in hub.chat if m["from"] == "assistant"] == ["Metformin helps."]
+
+
+def test_pill_check_tries_the_unmirrored_photo_when_the_first_read_fails(monkeypatch):
+    reads = iter(
+        [
+            '{"text": "J38AJ YOARRRY", "medicine": null, "strength": null}',  # mirrored: unreadable
+            '{"text": "METFORMIN 500 mg", "medicine": "METFORMIN", "strength": "500 mg"}',  # flipped: readable
+        ]
+    )
+    ai = AIAnswers(Settings(), local=OllamaChat("http://x", "gemma3:4b", 5))
+    sent = []
+    monkeypatch.setattr(
+        ai.local, "complete", lambda s, m, n, t, image_b64="": sent.append(image_b64) or next(reads)
+    )
+    r = ai.read_medicine("mirrored", ["Metformin"], "en", alternates=["flipped"])
+    assert r["matches"] == "Metformin" and sent == ["mirrored", "flipped"]
+    sent.clear()
+    reads = iter(['{"text": "METFORMIN 500 mg", "medicine": "METFORMIN"}'])
+    r = ai.read_medicine("good", ["Metformin"], "en", alternates=["flipped"])
+    assert r["matches"] == "Metformin" and sent == ["good"]  # first read worked: no second call

@@ -53,6 +53,8 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   const offset = useRef(0)
 
   useEffect(() => save('kw-privacy', privacy), [privacy])
+  const [mirror, setMirror] = useState(() => load('kw-mirror', true)) // selfie-style view
+  useEffect(() => save('kw-mirror', mirror), [mirror])
   useEffect(() => save('kw-handsfree', handsFree), [handsFree])
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now() / 1000), 500)
@@ -147,10 +149,11 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
 
   const pillCheck = async () => {
     const img = cam.captureFrame()
+    const flipped = cam.captureFrame(true) // tried too, in case this webcam sends a mirrored picture
     if (!img) return setPillMsg('Camera is not ready yet.')
     setPillMsg(lang === 'ms' ? 'Sedang membaca label…' : 'Reading the label…')
     try {
-      const r = await api.pillCheck(img)
+      const r = await api.pillCheck(img, flipped ?? undefined)
       const by =
         r.source === 'local'
           ? lang === 'ms'
@@ -425,12 +428,19 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               <IconCamera size={18} />
               <h2>{t('camera', lang)}</h2>
               <div className="spacer" />
+              <label
+                className="toggle"
+                title="Show the camera like a mirror. Turn off to read labels the right way round."
+              >
+                <input type="checkbox" checked={mirror} onChange={(e) => setMirror(e.target.checked)} />
+                {lang === 'ms' ? 'Cermin' : 'Mirror'}
+              </label>
               <label className="toggle">
                 <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
                 {t('privacy', lang)}
               </label>
             </div>
-            <div className="cam" data-testid="camera">
+            <div className={`cam${mirror ? '' : ' no-mirror'}`} data-testid="camera">
               <video ref={cam.videoRef} muted playsInline className={privacy ? 'hidden' : ''} />
               <canvas ref={cam.canvasRef} />
               <div className="cam-overlay">

@@ -358,7 +358,22 @@ class AIAnswers:
                 log.warning("AI call failed, using offline knowledge: %s", e)
         return offline_answer(text, lang)
 
-    def read_medicine(self, image_b64: str, med_names: list[str], lang: str) -> dict:
+    def read_medicine(
+        self, image_b64: str, med_names: list[str], lang: str, alternates: Optional[list[str]] = None
+    ) -> dict:
+        """Read the label. If that doesn't find a medicine on their list, try each alternate photo (e.g. the
+        same frame un-mirrored) and keep the best read: a match on their list, else any name, else the first."""
+        first = self._read_one(image_b64, med_names, lang)
+        best = first
+        for alt in alternates or []:
+            if best["matches"]:
+                break
+            r = self._read_one(alt, med_names, lang)
+            if r["matches"] or (r["medicine"] and not best["medicine"]):
+                best = r
+        return best
+
+    def _read_one(self, image_b64: str, med_names: list[str], lang: str) -> dict:
         if not self.online:
             return {
                 "medicine": None,

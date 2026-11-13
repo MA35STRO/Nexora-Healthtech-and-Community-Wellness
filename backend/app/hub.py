@@ -287,10 +287,10 @@ class Hub:
                 self._detect(det, now)
             return {"ok": True, "alert": bool(det)}
 
-    def pill_check(self, image_b64: str) -> dict:
+    def pill_check(self, image_b64: str, alternates: Optional[list[str]] = None) -> dict:
         with self.lock:
             names, lang = [m.name for m in self.meds.meds.values()], self.engine.lang
-        res = self.ai.read_medicine(image_b64, names, lang)
+        res = self.ai.read_medicine(image_b64, names, lang, alternates=alternates or [])
         with self.lock:
             self._record(
                 [

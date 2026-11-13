@@ -556,6 +556,10 @@ h2 {
   object-fit: cover;
   transform: scaleX(-1);
 }
+.cam.no-mirror video,
+.cam.no-mirror canvas {
+  transform: none; /* "Mirror" off: labels read the right way round */
+}
 .cam video.hidden {
   visibility: hidden;
 }

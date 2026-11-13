@@ -210,14 +210,14 @@ export const api = {
     note: string
     lang: string
   }) => req<Triage>('POST', '/api/wellness', body),
-  pillCheck: (image: string) =>
+  pillCheck: (image: string, image_flipped?: string) =>
     req<{
       medicine: string | null
       matches: string | null
       confidence: string
       note: string
       source: string
-    }>('POST', '/api/pillcheck', { image }),
+    }>('POST', '/api/pillcheck', { image, image_flipped }),
   vitals: (v: Partial<Vitals>) => req<{ ok: boolean; alert: boolean }>('POST', '/api/vitals', v),
   profile: () => req<Profile>('GET', '/api/profile'),
   saveProfile: (p: Partial<Profile>) => req<Profile>('POST', '/api/profile', p),

@@ -146,14 +146,20 @@ export function useCamera(privacy: boolean) {
     }
   }, [])
 
-  /** One JPEG of the current frame — used ONLY when the user taps "Check my medicine". */
-  const captureFrame = useCallback((): string | null => {
+  /** One JPEG of the current frame — used ONLY when the user taps "Check my medicine".
+   *  `flip` mirrors it left-right, for webcams that send a mirrored picture (labels read backwards). */
+  const captureFrame = useCallback((flip = false): string | null => {
     const v = videoRef.current
     if (!v || v.readyState < 2) return null
     const c = document.createElement('canvas')
     c.width = v.videoWidth
     c.height = v.videoHeight
-    c.getContext('2d')!.drawImage(v, 0, 0)
+    const ctx = c.getContext('2d')!
+    if (flip) {
+      ctx.translate(c.width, 0)
+      ctx.scale(-1, 1)
+    }
+    ctx.drawImage(v, 0, 0)
     return c.toDataURL('image/jpeg', 0.85)
   }, [])
 
