@@ -44,6 +44,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   const [text, setText] = useState('')
   const [wellnessOpen, setWellnessOpen] = useState(false)
   const [pillMsg, setPillMsg] = useState<string | null>(null)
+  const [pillBusy, setPillBusy] = useState(false)
   const [entryOpen, setEntryOpen] = useState(true) // "Add a reading" panel; stays open until the user closes it
   const [busy, setBusy] = useState(false)
   const [now, setNow] = useState(Date.now() / 1000)
@@ -148,10 +149,16 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
   const needsSetup = snap && !snap.profile.user_name && snap.meds.schedule.length === 0
 
   const pillCheck = async () => {
+    if (pillBusy) return // one at a time: extra taps only queue behind a slow read
     const img = cam.captureFrame()
     const flipped = cam.captureFrame(true) // tried too, in case this webcam sends a mirrored picture
     if (!img) return setPillMsg('Camera is not ready yet.')
-    setPillMsg(lang === 'ms' ? 'Sedang membaca label…' : 'Reading the label…')
+    setPillBusy(true)
+    setPillMsg(
+      lang === 'ms'
+        ? 'Sedang membaca label… boleh ambil masa sehingga seminit. Pegang kotak dengan tenang.'
+        : 'Reading the label… this can take up to a minute. Keep the box still.',
+    )
     try {
       const r = await api.pillCheck(img, flipped ?? undefined)
       const by =
@@ -167,6 +174,8 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
       setPillMsg(`${r.matches ? '✓ ' : ''}${r.note}${by ? ` (${by})` : ''}`)
     } catch {
       setPillMsg('Pill check failed.')
+    } finally {
+      setPillBusy(false)
     }
   }
 
@@ -479,7 +488,7 @@ export function Companion({ snap, connected }: { snap: Snapshot | null; connecte
               <button
                 className="btn small"
                 onClick={pillCheck}
-                disabled={cam.status !== 'live'}
+                disabled={cam.status !== 'live' || pillBusy}
                 title={t('checkMedHint', lang)}
               >
                 <IconCamera size={16} /> {t('checkMed', lang)}

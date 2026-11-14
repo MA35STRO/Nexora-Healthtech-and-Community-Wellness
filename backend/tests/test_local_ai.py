@@ -188,3 +188,26 @@ def test_pill_check_tries_the_unmirrored_photo_when_the_first_read_fails(monkeyp
     reads = iter(['{"text": "METFORMIN 500 mg", "medicine": "METFORMIN"}'])
     r = ai.read_medicine("good", ["Metformin"], "en", alternates=["flipped"])
     assert r["matches"] == "Metformin" and sent == ["good"]  # first read worked: no second call
+
+
+def test_pill_check_timeout_says_so_and_skips_the_second_read(monkeypatch):
+    ai = AIAnswers(Settings(), local=OllamaChat("http://x", "gemma3:4b", 5))
+    calls = []
+
+    def slow(*a, **k):
+        calls.append(1)
+        raise httpx.ReadTimeout("timed out")
+
+    monkeypatch.setattr(ai.local, "complete", slow)
+    r = ai.read_medicine("img", ["Metformin"], "en", alternates=["flipped"])
+    assert r["source"] == "timeout" and "took too long" in r["note"] and len(calls) == 1
+
+
+def test_hub_refuses_a_second_pill_check_while_one_is_running():
+    hub = Hub(Settings(anthropic_api_key="", ollama_model=""), Database(":memory:"))
+    hub._pill_busy.acquire()
+    try:
+        r = hub.pill_check("img")
+        assert r["source"] == "busy" and "Still reading" in r["note"]
+    finally:
+        hub._pill_busy.release()

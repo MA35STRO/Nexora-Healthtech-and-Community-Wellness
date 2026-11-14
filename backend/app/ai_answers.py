@@ -366,7 +366,9 @@ class AIAnswers:
         first = self._read_one(image_b64, med_names, lang)
         best = first
         for alt in alternates or []:
-            if best["matches"]:
+            if (
+                best["matches"] or first["source"] == "timeout"
+            ):  # a second slow read would only double the wait
                 break
             r = self._read_one(alt, med_names, lang)
             if r["matches"] or (r["medicine"] and not best["medicine"]):
@@ -394,12 +396,25 @@ class AIAnswers:
             return {**match_label(data, med_names, lang), "source": self.provider}
         except Exception as e:
             log.warning("Pill check failed: %s", e)
+            slow = isinstance(e, httpx.TimeoutException) or "timed out" in str(e).lower()
+            if slow:  # the label may be fine: the AI just didn't answer in time (usually low memory)
+                note = (
+                    "AI mengambil masa terlalu lama. Tutup aplikasi lain untuk mengosongkan memori, kemudian cuba lagi."
+                    if lang == "ms"
+                    else "The AI took too long to answer. Close other apps to free up memory, then try again."
+                )
+            else:
+                note = (
+                    "Saya tidak dapat membacanya. Cuba lagi dengan label menghadap kamera, dalam cahaya terang."
+                    if lang == "ms"
+                    else "I couldn't read that. Please try again with the label facing the camera, in good light."
+                )
             return {
                 "medicine": None,
                 "matches": None,
                 "confidence": "low",
-                "source": "error",
-                "note": "I couldn't read that. Please try again with the label facing the camera, in good light.",
+                "source": "timeout" if slow else "error",
+                "note": note,
             }
 
 

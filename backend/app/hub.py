@@ -287,10 +287,27 @@ class Hub:
                 self._detect(det, now)
             return {"ok": True, "alert": bool(det)}
 
+    _pill_busy = threading.Lock()  # one label read at a time: extra taps would only queue behind a slow one
+
     def pill_check(self, image_b64: str, alternates: Optional[list[str]] = None) -> dict:
         with self.lock:
             names, lang = [m.name for m in self.meds.meds.values()], self.engine.lang
-        res = self.ai.read_medicine(image_b64, names, lang, alternates=alternates or [])
+        if not self._pill_busy.acquire(blocking=False):
+            return {
+                "medicine": None,
+                "matches": None,
+                "confidence": "low",
+                "source": "busy",
+                "note": "Masih membaca gambar tadi. Sila tunggu sebentar."
+                if lang == "ms"
+                else "Still reading the last photo. Please wait a moment.",
+            }
+        try:
+            res = self.ai.read_medicine(image_b64, names, lang, alternates=alternates or [])
+        finally:
+            self._pill_busy.release()
+        if res.get("source") == "busy":
+            return res
         with self.lock:
             self._record(
                 [
